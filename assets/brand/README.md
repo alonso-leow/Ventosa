@@ -12,7 +12,7 @@ Gradient: orange `#ff8a1f` → purple `#8b3dff` (left → right on the wordmark,
 | `ventosa-wordmark-app-panel` | gradient on the app's panel surface |
 | `ventosa-v` | gradient V, transparent |
 | `ventosa-v-orange` / `-purple` / `-purple-lit` / `-white` / `-black` | solid V, transparent |
-| `ventosa-v-light-on-gradient` | app icon (rounded); `png/ventosa-icon-*` and `favicon.ico` |
+| `ventosa-v-light-on-gradient` | app icon (rounded) |
 | `ventosa-v-light-on-purple` / `-on-orange` | white V on solid colour |
 | `ventosa-v-app-panel` / `-app-tube` / `-app-orange-on-purple-deep` | square, hairline, in the app's surfaces |
 | `ventosa-banner` | 1200×630 social / repo banner in the app's look |
