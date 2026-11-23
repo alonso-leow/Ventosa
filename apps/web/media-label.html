@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Media labelling</title>
+<link rel="stylesheet" href="/common/ventosa.css">
+<style>
+body{margin:0;font:14px/1.5 ui-monospace,monospace;background:var(--bg,#0b0b10);color:var(--fg,#f2efe9)}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:16px;margin:0 0 12px;color:var(--p-lit,#b38bff)}
+.item{border:1px solid var(--line,#24232c);background:var(--pan,#12121a);padding:12px;margin:0 0 14px}
+.item h2{margin:0 0 2px;font-size:14px}.dim{color:var(--dim,#8a8794)}
+video,audio{width:100%;max-height:60vh;background:#000;margin:8px 0}
+img{max-width:100%;margin:8px 0}
+pre{white-space:pre-wrap;background:var(--inset,#050506);padding:8px;max-height:240px;overflow:auto}
+.files{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+button{font:inherit;background:var(--glass,#111114);color:inherit;border:1px solid var(--line,#24232c);padding:4px 10px;cursor:pointer}
+button.ok{border-color:#3ddc84;color:#3ddc84}button.no{border-color:#ffb000;color:#ffb000}
+button.on{border-color:var(--p-lit,#b38bff)}
+input{font:inherit;background:var(--inset,#050506);color:inherit;border:1px solid var(--line,#24232c);padding:4px 8px;width:60%}
+#toast{position:fixed;right:14px;bottom:14px;background:var(--pan,#12121a);border:1px solid var(--p-lit,#b38bff);padding:8px 12px;display:none}
+</style></head><body><main>
+<h1>Media labelling <span class="dim" id="sum"></span></h1>
+<div id="list"></div><div id="toast"></div></main>
+<script>
+const $ = s => document.querySelector(s);
+const h = (t, p = {}, ...k) => { const e = Object.assign(document.createElement(t), p); k.flat().forEach(x => x != null && e.append(x)); return e; };
+let data = {items: []}, cur = {}, busy = false;
+const url = p => '/file?path=' + encodeURIComponent(p);
+function toast(t) { const e = $('#toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(e._h); e._h = setTimeout(() => e.style.display = 'none', 6000); }
+async function post(path, body) { const r = await fetch(path, {method: 'POST', body: JSON.stringify(body)}); return r.json(); }
+function viewer(f) {
+  const k = f.kind;
+  if (!f.exists) return h('div', {className: 'dim', textContent: f.path + ' — missing'});
+  if (['mp4', 'mov', 'webm', 'mkv'].includes(k)) return h('video', {src: url(f.path), controls: true, preload: 'metadata'});
+  if (['mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus'].includes(k)) return h('audio', {src: url(f.path), controls: true});
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(k)) return h('img', {src: url(f.path)});
+  const pre = h('pre', {textContent: 'loading…'}); fetch(url(f.path)).then(r => r.text()).then(t => pre.textContent = t.slice(0, 20000)); return pre;
+}
+function draw() {
+  $('#sum').textContent = data.items.length ? `· ${data.items.length} waiting for you` : '· nothing waiting';
+  const L = $('#list'); L.innerHTML = '';
+  if (!data.items.length) L.append(h('p', {className: 'dim', textContent: 'Nothing to approve. When an AI phase finishes and a human step follows, it shows here.'}));
+  for (const it of data.items) {
+    const key = it.vid + it.step; const c = cur[key] ??= {i: 0, note: ''};
+    const files = it.files, f = files[c.i];
+    L.append(h('div', {className: 'item'},
+      h('h2', {textContent: `${it.vid} · ${it.title}`}), h('div', {className: 'dim', textContent: `${it.step.replace(/_/g, ' ')} — ${it.need}`}),
+      h('div', {className: 'files'}, ...files.map((x, i) => h('button', {className: i === c.i ? 'on' : '', textContent: x.path.split('/').pop(), onclick: () => { c.i = i; draw(); }}))),
+      f ? viewer(f) : h('div', {className: 'dim', textContent: 'No files recorded for the phase before.'}),
+      h('div', {}, h('input', {placeholder: 'note (required to send back)', value: c.note, oninput: e => c.note = e.target.value}), ' ',
+        h('button', {className: 'ok', textContent: 'Approve', onclick: async () => { data = await post('/api/approve', {vid: it.vid, step: it.step, note: c.note || 'ok'}); toast(`${it.vid} approved`); draw(); }}), ' ',
+        h('button', {className: 'no', textContent: it.back_to ? `Send back to ${it.back_to.replace(/_/g, ' ')}` : 'Send back', disabled: !it.back_to, onclick: async () => {
+          if (!c.note.trim()) { toast('write what to change first'); return; }
+          data = await post('/api/reject', {vid: it.vid, step: it.step, back_to: it.back_to, note: c.note}); toast(`${it.vid} sent back`); draw(); }}))));
+  }
+}
+async function load() {
+  if (busy || document.activeElement?.tagName === 'INPUT') return;
+  busy = true;
+  try { const n = await (await fetch('/api/review', {cache: 'no-store'})).json(); if (JSON.stringify(n) !== JSON.stringify(data)) { const before = data.items.length; data = n; if (before !== n.items.length && before) toast('new result to review'); draw(); } } catch { $('#sum').textContent = '· server offline'; }
+  busy = false;
+}
+load().then(draw); setInterval(load, 4000);
+</script></body></html>

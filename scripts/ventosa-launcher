@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Ventosa launcher: sync the GitHub master, rebuild only if build inputs changed,
+# install the binaries and CLI scripts to ~/.local/bin and the engine, apps and
+# templates to ~/.local/share/ventosa/runtime, then start the app (once).
+# Never builds the working checkout; the clone lives in ~/.cache/ventosa.
+# Data (tasks, queue, config) lives in ~/.local/share and ~/.config, so a hard
+# reset of the clone never touches it.
+set -euo pipefail
+
+REPO_URL="https://github.com/alonso-leow/ventosa.git"
+SRC="$HOME/.cache/ventosa"
+BIN_DIR="$HOME/.local/bin"
+STAMP="$SRC/target/release/.built-commit"
+BUILD_INPUTS=(src docs/wiki Cargo.toml Cargo.lock)
+BINS="ventosa ventosa-portal ventosa-mcp ventosa-import ventosa-daemon ventosa-init ventosa-install"
+SCRIPTS="ventosa-graph ventosa-app ventosa-labelling ventosa-teleprompter ventosa-launcher"
+RUNTIME="${XDG_DATA_HOME:-$HOME/.local/share}/ventosa/runtime"
+LOG="$HOME/.cache/ventosa-launcher.log"
+
+say() { printf '[ventosa] %s\n' "$*" | tee -a "$LOG"; }
+mkdir -p "$(dirname "$LOG")"
+
+if [ ! -d "$SRC/.git" ]; then
+    say "cloning $REPO_URL"
+    git clone -q "$REPO_URL" "$SRC"
+fi
+cd "$SRC"
+git remote set-url origin "$REPO_URL"
+git fetch -q origin main
+BEFORE="$(git rev-parse HEAD 2>/dev/null || echo none)"
+git reset -q --hard origin/main
+HEAD_SHA="$(git rev-parse HEAD)"
+say "master at ${HEAD_SHA:0:8}"
+
+needs_build() {
+    for b in $BINS; do [ -f "target/release/$b" ] || return 0; done
+    [ -f "$STAMP" ] || return 0
+    ! git diff --quiet "$(cat "$STAMP")" HEAD -- "${BUILD_INPUTS[@]}" 2>/dev/null
+}
+
+if needs_build; then
+    say "building release (incremental)..."
+    cargo build --release --bins 2>&1 | tee -a "$LOG" >/dev/null
+    for b in $BINS; do
+        [ -f "target/release/$b" ] || { say "build failed: $b missing"; exit 1; }
+    done
+    echo "$HEAD_SHA" > "$STAMP"
+    say "built ${HEAD_SHA:0:8}"
+else
+    say "binary up to date (no build inputs changed since last build)"
+fi
+
+mkdir -p "$BIN_DIR"
+for b in $BINS; do
+    install -m755 "target/release/$b" "$BIN_DIR/$b"
+done
+for s in $SCRIPTS; do
+    install -m755 "scripts/$s" "$BIN_DIR/$s"
+done
+# First run only: wire the MCP server and the skill into the AI clients found here.
+INSTALLED_STAMP="${XDG_DATA_HOME:-$HOME/.local/share}/ventosa/.installed-clients"
+if [ ! -f "$INSTALLED_STAMP" ]; then
+    say "wiring AI clients (ventosa-install)..."
+    if "$BIN_DIR/ventosa-install" >>"$LOG" 2>&1; then
+        say "AI clients wired"
+    else
+        say "ventosa-install failed (non-fatal, see log)"
+    fi
+    mkdir -p "$(dirname "$INSTALLED_STAMP")"
+    date -u +%FT%TZ > "$INSTALLED_STAMP"
+fi
+# Engine, white-label apps and templates: replaced as a whole on every start.
+rm -rf "$RUNTIME.new" && mkdir -p "$RUNTIME.new"
+cp -r engine apps templates "$RUNTIME.new/"
+mkdir -p "$RUNTIME.new/docs" && cp -r docs/wiki "$RUNTIME.new/docs/"
+rm -rf "$RUNTIME" && mv "$RUNTIME.new" "$RUNTIME"
+
+# Which level to start: admin (the graph app), worker (the launcher-only app, for people who
+# label and record) or both. Pass it as an argument (admin|worker|both), set VENTOSA_LEVEL, or
+# pick it in the menu shown here; the last choice is the menu's default.
+LEVEL_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/ventosa/last-level"
+LEVEL="${1:-${VENTOSA_LEVEL:-}}"
+if [ -z "$LEVEL" ] || [ "$LEVEL" = ask ]; then
+    LAST="$(cat "$LEVEL_FILE" 2>/dev/null || echo admin)"
+    OPTS="admin · graph and settings\nworker · launcher for labelling and recording\nboth · open both"
+    PICK=""
+    if command -v zenity >/dev/null && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+        PICK="$(zenity --list --title="Ventosa" --text="Start as" --column=level --column=what --hide-header --height=260 admin "graph and settings" worker "launcher for labelling and recording" both "open both" 2>/dev/null || true)"
+    elif command -v kdialog >/dev/null && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+        PICK="$(kdialog --title Ventosa --menu "Start as" admin "admin · graph and settings" worker "worker · launcher for labelling and recording" both "both · open both" 2>/dev/null || true)"
+    elif command -v fuzzel >/dev/null && [ -n "${WAYLAND_DISPLAY:-}" ]; then
+        PICK="$(printf "$OPTS" | fuzzel --dmenu --prompt 'ventosa ' 2>/dev/null | cut -d' ' -f1 || true)"
+    elif command -v rofi >/dev/null && [ -n "${DISPLAY:-}" ]; then
+        PICK="$(printf "$OPTS" | rofi -dmenu -p ventosa 2>/dev/null | cut -d' ' -f1 || true)"
+    elif [ -t 0 ]; then
+        printf 'Start Ventosa as:\n  1) admin   graph and settings\n  2) worker  launcher for labelling and recording\n  3) both\n[%s] > ' "$LAST"
+        read -r ans || ans=""
+        case "$ans" in 1) PICK=admin;; 2) PICK=worker;; 3) PICK=both;; admin|worker|both) PICK="$ans";; *) PICK="$LAST";; esac
+    fi
+    [ -n "$PICK" ] || { say "no level chosen, nothing started"; exit 0; }
+    LEVEL="$PICK"
+fi
+case "$LEVEL" in admin|worker|both) ;; *) say "unknown level '$LEVEL' (admin|worker|both)"; exit 1;; esac
+mkdir -p "$(dirname "$LEVEL_FILE")" && echo "$LEVEL" > "$LEVEL_FILE"
+
+start() { # start <binary> <level>
+    if pgrep -x "$1" >/dev/null; then say "$1 already running"; return; fi
+    say "starting $1 (${BEFORE:0:8} -> ${HEAD_SHA:0:8})"
+    VENTOSA_LEVEL="$2" nohup "$BIN_DIR/$1" >>"$LOG" 2>&1 &
+}
+case "$LEVEL" in
+    admin) start ventosa admin ;;
+    worker) start ventosa-portal worker ;;
+    both) start ventosa admin; start ventosa-portal worker ;;
+esac

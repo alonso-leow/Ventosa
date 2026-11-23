@@ -1,0 +1,35 @@
+{
+  "format": 1,
+  "id": "pixel-art",
+  "name": "Pixel Art",
+  "version": "1.0.0",
+  "author": "example",
+  "description": "Redraw stills as pixel art from scratch, with a palette setting and Aseprite as the human-owned editor.",
+  "permissions": ["nodes", "connections", "settings"],
+  "nodes": [
+    {
+      "id": "pixelate_stills",
+      "owner": "ai",
+      "need": "redraw each still as pixel art from scratch",
+      "skill": "**Do:** for each still in `assets/inserts/`, draw it again as pixel art from scratch (no filter over the original) at the size and palette set in Settings ▸ Pixel Art. Save to `assets/inserts/<ID>-<beat>-pixel.png` and list them in `assets/inserts/<ID>-pixel.md`."
+    },
+    {
+      "id": "touch_up_pixels",
+      "owner": "human",
+      "need": "touch up the pixel art in Aseprite",
+      "skill": "**Human does:** opens each `-pixel.png` in Aseprite (Connections ▸ Aseprite), fixes stray pixels, saves over it, then marks done in Ventosa ▸ to-do.",
+      "app": ""
+    }
+  ],
+  "connections": [
+    { "id": "aseprite", "name": "Aseprite", "what": "pixel-art editor used by the touch-up node", "link": "https://www.aseprite.org", "key_env": "" }
+  ],
+  "settings": {
+    "title": "Pixel Art",
+    "fields": [
+      { "key": "palette", "label": "Palette", "kind": "choice", "default": "pico8", "options": ["pico8", "gameboy", "endesga32"] },
+      { "key": "size", "label": "Sprite size (px)", "kind": "number", "default": 64 },
+      { "key": "dither", "label": "Dithering", "kind": "toggle", "default": false }
+    ]
+  }
+}

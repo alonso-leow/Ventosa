@@ -1,0 +1,43 @@
+{
+ "name": "my-podcast",
+ "brand": {
+  "name": "My Podcast",
+  "tagline": "episodes",
+  "accent": "#ff2e2e"
+ },
+ "unit": "episode",
+ "id_prefix": "E",
+ "subjects_dir": "episodes",
+ "platform": {
+  "name": "Podcast feed",
+  "title_max": 0,
+  "min_chapters": 0
+ },
+ "sponsor": {
+  "line": "",
+  "lower_third": ""
+ },
+ "media": {
+  "width": 0,
+  "height": 0,
+  "fps": 0,
+  "audio_only": true,
+  "edit_ext": [
+   ".mp3",
+   ".m4a",
+   ".wav",
+   ".flac",
+   ".ogg"
+  ]
+ },
+ "ports": {
+  "labelling": 8776,
+  "teleprompter": 8775
+ },
+ "rules": {
+  "no_music": false,
+  "max_animations": 0
+ },
+ "agent_command": "ventosa-graph attach {step} {vid}",
+ "agent_env": "VENTOSA_AGENT"
+}

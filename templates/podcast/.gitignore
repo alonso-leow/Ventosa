@@ -1,0 +1,5 @@
+pipeline/attached/
+pipeline/.ai_cursor
+assets/camera/
+assets/edits/
+!assets/**/.keep

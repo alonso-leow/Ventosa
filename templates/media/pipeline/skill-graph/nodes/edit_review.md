@@ -1,0 +1,3 @@
+# Node skill: edit_review [human]
+The AI already reviewed this cut (`auto_review`): open `assets/review/<ID>/report.md` (or the Review panel) for its findings, sampled frames and what it sent back before. Then watch the full cut (History plays the newest edit). Findings you do not care about: accept them (`ventosa-graph review <ID> --accept <key>`) so they are not flagged again.
+Approve: `ventosa-graph write human-done <ID> edit_review "ok"` and subtitles start. Not right: `ventosa-graph write reopen <ID> edit "what to change"` (or `color_grade`, `voiceover`, `motion_source`, `audio_fx`). An approval counts only for the edit it was given on; a newer edit asks again (and the AI reviews it again first).

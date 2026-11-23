@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Start (if needed) and open a white-label Ventosa app for a workspace.
+#   ventosa-app labelling|teleprompter|uploads [-w DIR] [--stop] [--no-open]
+#   ventosa-app dashboard|studio|media-labelling [-w DIR] [--stop] [--no-open]
+#   ventosa-app portal [--stop] [--no-open]                  the team's login page (no workspace)
+#   ventosa-app custom <id> [-w DIR] [--stop] [--no-open]   an AI-built app in apps/<id>/
+# uploads is a page of the labelling server (same port).
+set -euo pipefail
+RT="${VENTOSA_RUNTIME:-$HOME/.local/share/ventosa/runtime}"
+E="$RT/engine"
+APP="${1:?usage: ventosa-app labelling|teleprompter|uploads|custom <id> [-w DIR] [--stop] [--no-open]}"; shift
+ID=""
+if [ "$APP" = custom ]; then ID="${1:?usage: ventosa-app custom <id> [-w DIR] [--stop] [--no-open]}"; shift; fi
+STOP=0; OPEN=1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -w) export VENTOSA_WORKSPACE="$(cd "$2" && pwd)"; shift 2 ;;
+    --stop) STOP=1; shift ;;
+    --no-open) OPEN=0; shift ;;
+    *) echo "unknown arg $1" >&2; exit 2 ;;
+  esac
+done
+if [ "$APP" = portal ]; then
+  PORT="${VENTOSA_PORTAL_PORT:-8790}"; URL="http://127.0.0.1:$PORT/"
+  PID="${XDG_RUNTIME_DIR:-/tmp}/ventosa-portal.pid"
+  if [ "$STOP" = 1 ]; then [ -f "$PID" ] && kill "$(cat "$PID")" 2>/dev/null && rm -f "$PID" && echo "stopped portal"; exit 0; fi
+  if ! curl -s -o /dev/null "$URL"; then
+    (nohup python3 "$E/serve_portal.py" >"${XDG_CACHE_HOME:-$HOME/.cache}/ventosa-portal.log" 2>&1 & echo $! >"$PID")
+    for _ in $(seq 50); do curl -s -o /dev/null "$URL" && break; sleep 0.1; done
+  fi
+  echo "$URL"; [ "$OPEN" = 1 ] && (xdg-open "$URL" >/dev/null 2>&1 &); exit 0
+fi
+if [ "$APP" = custom ]; then
+  read -r PORT WSNAME < <(cd "${VENTOSA_WORKSPACE:-.}" && python3 -c "import json,sys; sys.path.insert(0, '$E'); from ws import WS; print(json.load(open('apps/$ID/app.json'))['port'], WS['name'])")
+  SERVER=serve_app.py; PAGE=""; APP_PORT="$ID"
+  PID="${XDG_RUNTIME_DIR:-/tmp}/ventosa-apps/$WSNAME-$ID.pid"
+  START=(python3 "$E/serve_app.py" "$PWD/apps/$ID" "$PORT")
+  [ -n "${VENTOSA_WORKSPACE:-}" ] && START=(python3 "$E/serve_app.py" "$VENTOSA_WORKSPACE/apps/$ID" "$PORT")
+else
+  case "$APP" in
+    labelling) SERVER=serve_label.py; PAGE=label.html ;;
+    teleprompter) SERVER=serve_record.py; PAGE=teleprompter.html ;;
+    uploads) SERVER=serve_label.py; PAGE=uploads.html; APP_PORT=labelling ;;
+    dashboard) SERVER=serve_dash.py; PAGE=dashboard.html ;;
+    studio) SERVER=serve_studio.py; PAGE=studio.html ;;
+    media-labelling) SERVER=serve_media.py; PAGE=media-label.html ;;
+    *) echo "unknown app $APP" >&2; exit 2 ;;
+  esac
+  read -r PORT WSNAME < <(cd "${VENTOSA_WORKSPACE:-.}" && python3 -c "import sys; sys.path.insert(0, '$E'); from ws import WS; print(WS['ports'].get('${APP_PORT:-$APP}', {'dashboard': 8768, 'studio': 8769, 'media-labelling': 8771}.get('${APP_PORT:-$APP}', 0)), WS['name'])")
+  START=(python3 "$E/$SERVER")
+  # A workspace with its own apps (no workspace.json, e.g. metalvj-media) keeps them:
+  # labelling/serve.py and recording/serve.py run as they are, on their own ports.
+  W="${VENTOSA_WORKSPACE:-$PWD}"
+  if [ ! -f "$W/workspace.json" ]; then
+    case "$APP" in
+      labelling) [ -f "$W/labelling/serve.py" ] && START=(python3 labelling/serve.py) ;;
+      teleprompter) [ -f "$W/recording/serve.py" ] && START=(python3 recording/serve.py) ;;
+      uploads) [ -f "$W/labelling/serve.py" ] && { PORT=$((PORT + 1000)); export VENTOSA_PORT=$PORT; } ;;
+    esac
+  fi
+  PID="${XDG_RUNTIME_DIR:-/tmp}/ventosa-${APP_PORT:-$APP}-$PORT.pid"
+fi
+URL="http://127.0.0.1:$PORT/$PAGE"
+if [ "$STOP" = 1 ]; then
+  [ -f "$PID" ] && kill "$(cat "$PID")" 2>/dev/null && rm -f "$PID" && echo "stopped $APP${ID:+ $ID} ($WSNAME)"
+  exit 0
+fi
+mkdir -p "$(dirname "$PID")"
+if ! curl -s -o /dev/null "$URL"; then
+  LOG="${XDG_CACHE_HOME:-$HOME/.cache}/ventosa-${APP_PORT:-$APP}-$WSNAME.log"
+  (cd "${VENTOSA_WORKSPACE:-.}" && nohup "${START[@]}" >"$LOG" 2>&1 & echo $! >"$PID")
+  for _ in $(seq 50); do curl -s -o /dev/null "$URL" && break; sleep 0.1; done
+fi
+echo "$URL"
+[ "$OPEN" = 1 ] && (xdg-open "$URL" >/dev/null 2>&1 &)
+exit 0

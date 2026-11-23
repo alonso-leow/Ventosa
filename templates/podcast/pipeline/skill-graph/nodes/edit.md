@@ -1,0 +1,2 @@
+# Node skill: edit [AI]
+Audio-only episode. 1) List the kept takes per line from `recording/clips.json` in script order. 2) Assemble and master the episode with the workspace's rendering path (see `tone.md` → Rendering): your DAW, or ffmpeg concat + loudnorm at −16 LUFS (stereo) / −19 LUFS (mono). 3) Export `assets/edits/<ID>-final.mp3` and write `assets/edits/<ID>-chapters.txt` (one `mm:ss Title` per line, from the script's `**Chapter: …**` markers and the real take lengths). 4) Listen to the joins, then `ventosa-graph write edit-done <ID> assets/edits/<ID>-final.mp3`.

@@ -1,0 +1,757 @@
+{
+ "name": "ventosa-meta-graph",
+ "soul": "soul",
+ "nodes": [
+  {
+   "id": "soul",
+   "group": "soul",
+   "title": "Why Ventosa exists",
+   "text": "The user makes videos automated IN BULK through pipelines (skill graphs), with optional human filters in the loop. The AI does the obvious work end to end: research, options, drafts, plans, cuts, renders, reviews, exports. Humans gate only what is taste or risk: the angle, the script, what is recorded, the look, the cut, what goes public.\nQuality over volume: ten good videos beat fifty that need rework. A graph that makes many videos is one good graph run many times, not a shortcut around review.\nDecide yourself what is reversible, local, cheap and inside the graph's rules; ask (decision_ask) for what is taste, risk, money, a real person or brand, or outside the rules. When unsure whether to ask, ask once, with options.\nBe honest about limits: say what you did not check, what is untested, what failed and what it cost. Never claim a step is done that is not.\nNever publish, upload, spend, install software, delete the human's takes or labels, or send private material to a provider without the matching elevate gate and a recorded answer.\nNavigation: you entered here. Follow the edges outward: principles (how to decide), types (what a node is), views (what the human sees), tools (what you can call), recipes (what people ask for), patterns (how to combine nodes), testing, failures.",
+   "informs": [
+    "hub_principles",
+    "hub_types",
+    "hub_views",
+    "hub_tools",
+    "hub_recipes",
+    "hub_patterns",
+    "hub_testing",
+    "hub_failures",
+    "hub_policies"
+   ]
+  },
+  {
+   "id": "hub_principles",
+   "group": "principles",
+   "title": "Principles",
+   "text": "How to decide and what is never done alone. Start with decide_vs_ask, then elevate_gates.",
+   "informs": [
+    "decide_vs_ask",
+    "elevate_gates",
+    "honesty_limits",
+    "quality_over_volume",
+    "human_filter_rule"
+   ]
+  },
+  {
+   "id": "hub_types",
+   "group": "types",
+   "title": "Node types and contracts",
+   "text": "Everything in a graph is a step node. Read contract first, then the type you need.",
+   "informs": [
+    "contract",
+    "type_ai",
+    "type_human",
+    "type_gate",
+    "type_fanout",
+    "type_app",
+    "type_tool",
+    "skill_files",
+    "knowledge_files"
+   ]
+  },
+  {
+   "id": "hub_views",
+   "group": "views",
+   "title": "What the human sees",
+   "text": "The app's views and the helper apps. The human reaches your work through these: tell them where to look.",
+   "informs": [
+    "view_canvas",
+    "view_node_panel",
+    "view_library",
+    "view_queue",
+    "view_history",
+    "view_media_play",
+    "view_chat",
+    "view_settings",
+    "app_labelling",
+    "app_teleprompter",
+    "app_recorder",
+    "app_custom",
+    "handoffs"
+   ]
+  },
+  {
+   "id": "hub_tools",
+   "group": "tools",
+   "title": "MCP tool families",
+   "text": "What you can call, grouped by purpose, and when.",
+   "informs": [
+    "tools_orient",
+    "tools_queue",
+    "tools_intake",
+    "tools_graph_edit",
+    "tools_decisions",
+    "tools_media",
+    "tools_callbacks",
+    "tools_batch",
+    "tools_apps",
+    "tools_tooling",
+    "tools_research",
+    "tools_files",
+    "tools_tasks",
+    "tools_connections"
+   ]
+  },
+  {
+   "id": "hub_recipes",
+   "group": "recipes",
+   "title": "Recipes",
+   "text": "What people ask for and the path through the graph.",
+   "informs": [
+    "recipe_single",
+    "recipe_bulk",
+    "recipe_podcast",
+    "recipe_reels",
+    "recipe_callback",
+    "recipe_new_graph"
+   ]
+  },
+  {
+   "id": "hub_patterns",
+   "group": "patterns",
+   "title": "Node combinations",
+   "text": "Reusable shapes for a graph.",
+   "informs": [
+    "pat_fanout",
+    "pat_shared_vs_per_video",
+    "pat_human_filter",
+    "pat_review_loop",
+    "pat_optional_skip",
+    "pat_callback_edges",
+    "pat_gen_then_gate"
+   ]
+  },
+  {
+   "id": "hub_testing",
+   "group": "testing",
+   "title": "Testing",
+   "text": "How to know a graph, a node or a review works, and what is not tested.",
+   "informs": [
+    "test_graph",
+    "test_node",
+    "test_review",
+    "test_dry_run",
+    "test_untested"
+   ]
+  },
+  {
+   "id": "hub_failures",
+   "group": "failures",
+   "title": "Failure modes and recovery",
+   "text": "What goes wrong and what to do.",
+   "informs": [
+    "fail_attach",
+    "fail_stale",
+    "fail_loop",
+    "fail_tool",
+    "fail_refused",
+    "fail_cost",
+    "recovery"
+   ]
+  },
+  {
+   "id": "hub_policies",
+   "group": "policies",
+   "title": "Standing policies",
+   "text": "Rules that apply across graphs.",
+   "informs": [
+    "policy_consistency",
+    "policy_subtitles",
+    "policy_cron",
+    "policy_output"
+   ]
+  },
+  {
+   "id": "decide_vs_ask",
+   "group": "principles",
+   "title": "Decide or ask",
+   "text": "Decide alone: naming, ordering, formatting, which of two equal local tools, a retry after a transient error, anything inside the node's skill and reversible.\nAsk with decision_ask (give options, a recommended one, the cost of each): the angle or thesis when the labels leave it open; anything about a real person, brand or sponsor; a claim with no source; any money (paid generation, cloud render, API beyond batch limits); any install; publishing, uploading, scheduling; deleting or overwriting the human's takes, edits or labels; a platform, length or look the tone file does not define; a blocker you cannot route.\nAsk once per decision, not once per video: in bulk, ask with the total estimate and apply the answer to the batch. Record the answer so the next run does not ask again.\nNever ask for what the graph already answers. Never guess what the graph says to ask.",
+   "informs": [
+    "elevate_gates"
+   ]
+  },
+  {
+   "id": "elevate_gates",
+   "group": "principles",
+   "title": "Elevate gates",
+   "text": "The graph's elevate text (graph_node shows it, graph_elevate_set edits it) lists decisions, edge cases and dangerous scenarios. Gates in force: installs and running found scripts; paid, cloud or third-party generation and rendering; providers not enabled in settings; copyleft or commercial-licence tools in a product; third-party components without a licence record; real people, brands, copyrighted material; destructive edits; publishing; cuts above 40% of a take; sponsor or quoted lines dropped.\nA gate is satisfied only by a recorded human answer (decision_answer) or a limit the human set in settings. A refusal from the policy layer is never retried: raise decision_ask and stop.",
+   "informs": [
+    "decide_vs_ask"
+   ]
+  },
+  {
+   "id": "honesty_limits",
+   "group": "principles",
+   "title": "Honesty and limits",
+   "text": "Report what happened: files written, measurements taken, frames looked at, what cost money. Say what you did not verify. A skipped optional node says why. Do not mark a node done on intent. Do not hide a failed check inside a pass note. If a tool is missing, say so and stop instead of faking its output.",
+   "informs": []
+  },
+  {
+   "id": "quality_over_volume",
+   "group": "principles",
+   "title": "Quality over volume",
+   "text": "Bulk means the same good graph run many times. Review the first video fully before fanning out the rest when the graph is new or changed. Use auto_review before the human, human gates where taste matters. A batch that produces many cuts the human must fix is a failed batch: stop it and fix the graph.",
+   "informs": [
+    "human_filter_rule"
+   ]
+  },
+  {
+   "id": "human_filter_rule",
+   "group": "principles",
+   "title": "Where humans filter",
+   "text": "Put a human gate where a wrong choice is expensive to undo or is pure taste: thesis or angle, script approval (label), recording, the shot plan before anything is rendered (plan_ok), generated or rendered motion (motion_ok), the final cut (edit_review), publish and upload. Do not add gates for mechanical checks: measure them (auto_review). Fewer, earlier gates beat many late ones.",
+   "informs": [
+    "pat_human_filter"
+   ]
+  },
+  {
+   "id": "contract",
+   "group": "types",
+   "title": "Node contract",
+   "text": "A step has: id, owner (ai or human), need (one line), skill (a node skill file), command (the one write command that finishes it), reads and writes (file ids F-* and knowledge ids K-*), after (explicit dependencies), done_when (what proves it is done), artifacts (files it must leave), elevate (extra rules for this node), optional model and app.\nEdges come from reads and writes plus after. A node is stale when a file it reads changed since it ran. The write gate refuses writes without the matching attachment: one agent, one node, one subject at a time.",
+   "informs": [
+    "type_ai",
+    "type_human"
+   ]
+  },
+  {
+   "id": "type_ai",
+   "group": "types",
+   "title": "AI node",
+   "text": "Owner ai. Claimed from the AI queue, attached, follows its skill, finishes with its write command (usually step-done with a one-line note). Optional ones finish with a note starting 'skipped:' and a reason. Never approves a human node.",
+   "informs": [
+    "pat_optional_skip"
+   ]
+  },
+  {
+   "id": "type_human",
+   "group": "types",
+   "title": "Human node",
+   "text": "Owner human. Becomes a to-do; the AI cannot attach to it. Tell the human what and where (the view or app). Completes with human-done in the app or reopen to send back.",
+   "informs": [
+    "handoffs"
+   ]
+  },
+  {
+   "id": "type_gate",
+   "group": "types",
+   "title": "Gate node",
+   "text": "A human node placed after AI work to approve it (names end in _ok, or label, edit_review). Approval counts only for the version it was given on; a newer version asks again. Send-back is reopen with a note naming the node to redo.",
+   "informs": [
+    "pat_human_filter"
+   ]
+  },
+  {
+   "id": "type_fanout",
+   "group": "types",
+   "title": "Fan-out",
+   "text": "Many subjects walk one graph: no loop node exists. pipeline_intake registers one subject per title; the queue holds one item per subject and node. Per-video files carry the subject id.",
+   "informs": [
+    "pat_fanout"
+   ]
+  },
+  {
+   "id": "type_app",
+   "group": "types",
+   "title": "App node",
+   "text": "A human node wired to a small page (app_create, app_write_file, app_deploy). The page calls ventosa.done(subject, note) to finish the node (effect human-done) or the AI finishes an AI step (step-done). Use for reviews and checklists that a phone can do.",
+   "informs": [
+    "app_custom"
+   ]
+  },
+  {
+   "id": "type_tool",
+   "group": "types",
+   "title": "Tool node",
+   "text": "An AI node that mostly runs a workspace tool (tool_install stores the command, tool_run runs it): renderers, encoders, generators. Installing is gated; running within limits is not.",
+   "informs": [
+    "tools_tooling"
+   ]
+  },
+  {
+   "id": "skill_files",
+   "group": "types",
+   "title": "Skill files",
+   "text": "Each node has nodes/<id>.md: inputs, do, rules, elevate, done. graph_node returns it. Edit with graph_step_set field skill. Keep it short and concrete; put long reference in knowledge files.",
+   "informs": []
+  },
+  {
+   "id": "knowledge_files",
+   "group": "types",
+   "title": "Knowledge files",
+   "text": "K-* entries: tone.md, meta/, research/, craft/ (motion, structure, encoding, platforms, captions, tool choice, render backends, 3D, generated media, review, browsing). Shared by every subject. The tone file wins over any craft file; craft files are guidance.",
+   "informs": []
+  },
+  {
+   "id": "view_canvas",
+   "group": "views",
+   "title": "Graph canvas",
+   "text": "Overview: the graph as nodes and edges, manual start (hover a node), cron job node, executions. Selecting a node opens its panel. The human edits the graph here; you edit it with the graph_step tools.",
+   "informs": [
+    "view_node_panel"
+   ]
+  },
+  {
+   "id": "view_node_panel",
+   "group": "views",
+   "title": "Node panel",
+   "text": "Properties of the selected node on the key/payload grid: owner, need, skill, reads and writes, elevate, model, queue, a button to open the node's library folder, run history. What you change with graph_step_set shows here.",
+   "informs": [
+    "view_library"
+   ]
+  },
+  {
+   "id": "view_library",
+   "group": "views",
+   "title": "Library (files)",
+   "text": "The Files view, also opened at a node's folder: takes, renders, plans, reviews, exports. Files can be dropped in from the OS. Point the human here for anything you wrote that they should look at.",
+   "informs": [
+    "view_media_play"
+   ]
+  },
+  {
+   "id": "view_queue",
+   "group": "views",
+   "title": "To-do and AI queue",
+   "text": "To-do lists human steps and decision cards; the AI queue lists items per node. Queue statuses: queued, running, review, done, failed. Set review when a human must choose next.",
+   "informs": [
+    "view_history"
+   ]
+  },
+  {
+   "id": "view_history",
+   "group": "views",
+   "title": "History",
+   "text": "Every run, event and callback walk in order, with the AI's notes and files. The place to verify what happened and to play the newest edit.",
+   "informs": [
+    "view_media_play"
+   ]
+  },
+  {
+   "id": "view_media_play",
+   "group": "views",
+   "title": "Media play",
+   "text": "media_list shows edits, takes and renders; media_play opens one in a player (a path or a subject's newest edit). Use it to show the human a cut or a frame at a timecode.",
+   "informs": []
+  },
+  {
+   "id": "view_chat",
+   "group": "views",
+   "title": "AI chat and speech",
+   "text": "Full-screen chat with the same tools; @ references steps, fields, skills, items, files. Speech mode is the same AI by voice. Chats are saved.",
+   "informs": []
+  },
+  {
+   "id": "view_settings",
+   "group": "views",
+   "title": "Settings",
+   "text": "AI provider, voice, permissions, limits (batch spend, retries), servers, recommended tools, MCP clients, trusted sources. Limits here are the standing answers to many gates.",
+   "informs": []
+  },
+  {
+   "id": "app_labelling",
+   "group": "views",
+   "title": "Labelling app",
+   "text": "ventosa-labelling: the human picks the thesis or script version, approves a paragraph stack (label). Nodes: thesis, label. After approval the AI continues at script.",
+   "informs": [
+    "handoffs"
+   ]
+  },
+  {
+   "id": "app_teleprompter",
+   "group": "views",
+   "title": "Teleprompter",
+   "text": "ventosa-teleprompter: the human reads the approved script and records. teleprompter_log shows which text line each camera file holds.",
+   "informs": [
+    "app_recorder"
+   ]
+  },
+  {
+   "id": "app_recorder",
+   "group": "views",
+   "title": "Recorder and inbox",
+   "text": "Record step: takes imported from the camera inbox, keep or discard per line (clips.json). Takes are the human's: never delete or overwrite them. link_media maps files to lines.",
+   "informs": [
+    "handoffs"
+   ]
+  },
+  {
+   "id": "app_custom",
+   "group": "views",
+   "title": "Custom apps",
+   "text": "app_list shows apps and whether they run. Build one for a human step that is a form or a quick review; deploy over SSH when it must be reachable from a phone (app_publish, app_pull).",
+   "informs": []
+  },
+  {
+   "id": "handoffs",
+   "group": "views",
+   "title": "Human handoffs",
+   "text": "Every time work waits on the human, say: which subject, which node, where (view or app), what to decide, what happens next. Finishing a human node moves the subject on by itself; do not mark it done for them. After a reopen, the walk returns to the node that was sent back.",
+   "informs": []
+  },
+  {
+   "id": "tools_orient",
+   "group": "tools",
+   "title": "Orient",
+   "text": "help (this graph, then now-state), workspaces_list, workspace_status, graph_nodes, graph_node, graph_steps. Always before acting: what graph, what is queued, what the node's skill and elevate rules say.",
+   "informs": [
+    "tools_queue"
+   ]
+  },
+  {
+   "id": "tools_queue",
+   "group": "tools",
+   "title": "Queue",
+   "text": "queue_list, queue_claim (node, agent: take the oldest, mark running), queue_set_status (done, review, failed), sync_now (refresh the workspace state after files changed outside the engine), queue_enqueue (add an item for an existing subject and node). Claim before working; never work what you did not claim.",
+   "informs": [
+    "tools_intake"
+   ]
+  },
+  {
+   "id": "tools_intake",
+   "group": "tools",
+   "title": "Intake and writes",
+   "text": "pipeline_intake (title becomes a subject on the first node), pipeline_attach (second lock), pipeline_write (the node's one write command). Never edit queue or state files by hand.",
+   "informs": []
+  },
+  {
+   "id": "tools_graph_edit",
+   "group": "tools",
+   "title": "Edit the graph",
+   "text": "graph_step_add, graph_step_set (owner, need, skill, reads, writes, after, command, done_when, elevate, model), graph_step_remove, graph_elevate_set. One small change at a time; graph_nodes before and after. Only when the task is a graph edit, never in the same run as node work.",
+   "informs": [
+    "pat_fanout"
+   ]
+  },
+  {
+   "id": "tools_decisions",
+   "group": "tools",
+   "title": "Decisions",
+   "text": "decision_ask (options, recommendation), decision_list, decision_answer (the human's tool), request_human (a to-do for them). Use instead of guessing; then stop the run.",
+   "informs": [
+    "decide_vs_ask"
+   ]
+  },
+  {
+   "id": "tools_media",
+   "group": "tools",
+   "title": "Media",
+   "text": "media_list, media_play, teleprompter_log, visualizer_render (song to video). Show, do not describe, when the human must judge a picture or sound.",
+   "informs": [
+    "view_media_play"
+   ]
+  },
+  {
+   "id": "tools_callbacks",
+   "group": "tools",
+   "title": "Callbacks",
+   "text": "stale (nodes whose inputs changed since they ran), callback (go back to a node: fast re-runs it, then later nodes only when their inputs changed; full re-runs everything downstream in order; dry_run first), callback_stop. Human nodes reopen as to-dos; a published subject needs decision_ask. Refusals (depth, cycle, repeat within an hour) go to decision_ask.",
+   "informs": [
+    "pat_callback_edges"
+   ]
+  },
+  {
+   "id": "tools_batch",
+   "group": "tools",
+   "title": "Batches",
+   "text": "batch_start (workspace, kind, node: run queued AI items within limits), batch_list, batch_stop. Limits in settings bound spend and count. Schedules run an isolated agent on one phase.",
+   "informs": [
+    "policy_cron"
+   ]
+  },
+  {
+   "id": "tools_apps",
+   "group": "tools",
+   "title": "Apps and servers",
+   "text": "app_create, app_write_file, app_deploy, app_list, app_stop, app_publish, app_pull, servers_list. For human steps that are pages.",
+   "informs": [
+    "type_app"
+   ]
+  },
+  {
+   "id": "tools_tooling",
+   "group": "tools",
+   "title": "Tools and plugins",
+   "text": "tools_recommended (what is present or missing), tool_install (store a workspace command: gated), tool_run, skill_install, plugin_list, plugin_validate, plugin_install, plugin_remove, install_info, install_client. Installing is always elevated.",
+   "informs": [
+    "type_tool"
+   ]
+  },
+  {
+   "id": "tools_research",
+   "group": "tools",
+   "title": "Research and consistency",
+   "text": "web_research (search with sources), trusted_sources_list, trusted_source_add, trusted_source_used, trusted_source_approve: recurring characters, assets and looks are approved once and reused verbatim.",
+   "informs": [
+    "policy_consistency"
+   ]
+  },
+  {
+   "id": "tools_files",
+   "group": "tools",
+   "title": "Files",
+   "text": "files_list, file_read: read the workspace; never write state files by hand.",
+   "informs": []
+  },
+  {
+   "id": "tools_tasks",
+   "group": "tools",
+   "title": "Personal tasks",
+   "text": "list_tasks, add_task, set_done, delete_task: the human's task list, separate from the graph.",
+   "informs": []
+  },
+  {
+   "id": "tools_connections",
+   "group": "tools",
+   "title": "External connections",
+   "text": "Only what you can call counts: an MCP server, a CLI, or an API with credentials in settings. Apps that only have a graphical interface are manual human tools, not AI nodes. tools_recommended says what is present. A connection that spends money is a gate (gen_media, cloud render). The local suite of creation apps (video editing, motion graphics, 2D animation, vector, photo, design, UI, slides, textures, materials, audio, CAD, spreadsheet) each has a headless MCP server and CLI: callable, free, installed only after an ask (craft file K-suite). Desktop generation studios without MCP or CLI are manual human apps.",
+   "informs": [
+    "pat_gen_then_gate"
+   ]
+  },
+  {
+   "id": "recipe_single",
+   "group": "recipes",
+   "title": "One video",
+   "text": "pipeline_intake a title; then follow the graph: options (AI) > thesis (human) > drafts > label (human) > script > record (human) > analysis, plan, cut list, motion, audio, edit, grade, auto_review > edit_review (human) > subtitles, exports, publish_meta > publish and upload (human). Claim, attach, work, write, repeat; tell the human which node waits.",
+   "informs": [
+    "pat_human_filter"
+   ]
+  },
+  {
+   "id": "recipe_bulk",
+   "group": "recipes",
+   "title": "N videos in bulk (for example 20 about a theme)",
+   "text": "1 Orient: workspaces_list, graph_steps, workspace_status. 2 Titles: if not given, propose N distinct angles from the theme with web_research and the knowledge files; show them and wait for approval. 3 Theme subject (T00): pipeline_intake once; do pool, shared visual_refs, shared gen_media on it. 4 Fan out: pipeline_intake once per approved title (V01..VN); each is queued on options. 5 Fit the graph: graph_step_remove nodes no video needs, or let them finish skipped; graph_step_add then graph_step_set (skill, reads, writes, command, after, done_when, elevate) for missing nodes, with a human *_ok gate after anything to approve. 6 Gates: one decision_ask with the total cost estimate for generation; one per install; before cloud rendering; before publishing. 7 Run V01 fully to its human gates first when the graph is new; then batch_start. 8 Report: subjects, what waits on the human, cost, open decisions.\nGraph today: pool > options > thesis(h) > drafts > label(h) > script > record(h) > link_media > footage_analysis > visual_refs > shot_plan > plan_ok(h) > rough_cut > voiceover > voiceover_ok(h) > gen_media > scene_3d > motion_source > motion_ok(h) > audio_fx > audio_ok(h) > edit > color_grade > auto_review > edit_review(h) > subtitles > export_formats > publish_meta > publish(h) > upload(h) > done.\nExample, theme \"how city transit works\": T00 runs pool, visual_refs, gen_media (writes assets/refs/T00-style.md, assets/generated/T00/*). V01 subway signalling and V03 ticketing are talking heads: voiceover, gen_media, scene_3d finish 'skipped'. V02 bus lanes needs a 3D opener: scene_3d writes assets/models/V02-bus.glb and assets/renders/V02-3d-open.mp4; motion_source composites it. Edges: footage_analysis -F-analysis-> rough_cut, shot_plan, audio_fx, auto_review; visual_refs(T00) -F-refs-> shot_plan, motion_source, scene_3d; gen_media -F-generated-> scene_3d, motion_source, edit; scene_3d -F-renders-> motion_source, edit, auto_review; rough_cut -F-plans-> edit, auto_review; edit -F-edits-> color_grade -> auto_review -F-review-> edit_review; auto_review -blocker-> reopen audio_fx | color_grade | edit | motion_source | shot_plan.\nAdding a node a workspace lacks (V02's 3D): graph_step_add id scene_3d owner ai need '3D shots' before motion_source; graph_step_set skill, reads F-plans,F-refs,K-3d,K-render, writes F-generated,F-renders, command step-done; queue_enqueue node scene_3d for V02 only.",
+   "informs": [
+    "pat_fanout",
+    "pat_shared_vs_per_video",
+    "decide_vs_ask"
+   ]
+  },
+  {
+   "id": "recipe_podcast",
+   "group": "recipes",
+   "title": "Podcast episode",
+   "text": "The podcast template: script, record, edit, publish nodes (a lighter graph). Same rules: human gates on script and recording; AI on edit and metadata. Use the media graph's analysis, cut list and review nodes by adding them with graph_step_add when needed.",
+   "informs": [
+    "pat_fanout"
+   ]
+  },
+  {
+   "id": "recipe_reels",
+   "group": "recipes",
+   "title": "Reels and shorts from a long video",
+   "text": "Start from the signed master: rough_cut picks sentence-bounded clips, subtitles writes 9:16 tracks, export_formats burns captions for vertical targets. Per clip a subject (or a reel list on the video). Platform limits come from K-platforms.",
+   "informs": [
+    "pat_fanout"
+   ]
+  },
+  {
+   "id": "recipe_callback",
+   "group": "recipes",
+   "title": "Something already done broke",
+   "text": "stale lists nodes whose inputs changed. callback to the latest node whose own inputs changed: fast (default) re-runs it then later nodes only if their inputs changed; full re-runs all downstream. dry_run to show the plan. Inside a run pass caller = your node. Published subjects need decision_ask.",
+   "informs": [
+    "pat_callback_edges"
+   ]
+  },
+  {
+   "id": "recipe_new_graph",
+   "group": "recipes",
+   "title": "Build a graph from a brief",
+   "text": "Draft the graph from what the user makes (bio in settings): list the human decisions first (those become gates), then the AI steps between them, then the files each reads and writes. Create with graph_step_add/set, write each skill file, set elevate rules, dry-run one subject through the first AI node, then fan out.",
+   "informs": [
+    "test_graph"
+   ]
+  },
+  {
+   "id": "pat_fanout",
+   "group": "patterns",
+   "title": "Fan-out by subject",
+   "text": "One graph, many subjects. Per-subject nodes read and write files named by the subject id. Theme-level work runs once on a theme subject and per-video nodes read its files. Never build a loop node.",
+   "informs": [
+    "pat_shared_vs_per_video"
+   ]
+  },
+  {
+   "id": "pat_shared_vs_per_video",
+   "group": "patterns",
+   "title": "Shared vs per-video",
+   "text": "Shared: knowledge files, the graph, tool installs, the style sheet. Per video: script, plans, cut list, renders, review, exports, captions. If two videos must look alike, share the style sheet, not the render.",
+   "informs": []
+  },
+  {
+   "id": "pat_human_filter",
+   "group": "patterns",
+   "title": "Human filter placement",
+   "text": "Early: thesis. Before expensive work: label (script) and plan_ok. After generation: motion_ok. Before the human watches: auto_review. Last: edit_review, publish, upload. Add a phone-sized app for quick yes/no gates in bulk.",
+   "informs": [
+    "type_gate"
+   ]
+  },
+  {
+   "id": "pat_review_loop",
+   "group": "patterns",
+   "title": "Review loop",
+   "text": "A measuring AI node (auto_review) sits before the human gate; blockers reopen the owning node with the finding as note; at most 3 automatic rounds per cut, then escalate with open findings attached. The human can accept a finding so it is not flagged again.",
+   "informs": [
+    "test_review"
+   ]
+  },
+  {
+   "id": "pat_optional_skip",
+   "group": "patterns",
+   "title": "Optional nodes",
+   "text": "Keep optional nodes in the graph and let them finish 'skipped: reason' rather than removing them per video: the graph stays one shape for every subject.",
+   "informs": []
+  },
+  {
+   "id": "pat_callback_edges",
+   "group": "patterns",
+   "title": "Callbacks and edges",
+   "text": "Accurate reads and writes make callbacks cheap: fast mode re-runs only nodes whose inputs changed. A node that reads nothing falls back to 'every later step': declare its files.",
+   "informs": []
+  },
+  {
+   "id": "pat_gen_then_gate",
+   "group": "patterns",
+   "title": "Generate, estimate, ask",
+   "text": "For anything paid: list options, estimate (free), decision_ask with cost, generate, store with a sidecar (provider, model, prompt, cost), human reviews at a gate. At most one retry.",
+   "informs": [
+    "elevate_gates"
+   ]
+  },
+  {
+   "id": "test_graph",
+   "group": "testing",
+   "title": "Testing a graph",
+   "text": "graph_nodes before and after every edit; check each node has a skill, owner, command, reads, writes, done_when; every read file is written by some earlier node or is knowledge; every AI node is followed by a way for the human to see its result. Dry-run one subject to the first human gate. callback with dry_run shows the dependency plan without changing anything.",
+   "informs": [
+    "test_node",
+    "test_dry_run"
+   ]
+  },
+  {
+   "id": "test_node",
+   "group": "testing",
+   "title": "Testing a node",
+   "text": "Attach to it for one subject, run its skill, check the files named in artifacts exist and the done_when holds, finish with the write command, then run stale: a node that reports itself stale right after finishing has wrong reads.",
+   "informs": []
+  },
+  {
+   "id": "test_review",
+   "group": "testing",
+   "title": "Testing a review",
+   "text": "The measured checks are unit tested (parsing of probe and filter output, severity routing, the 3-round guard). Frame sampling and the full run on a real cut are only exercised by running ventosa-graph review on a real file: do it once on a short clip with a known fault (silence, black frame, wrong size) before trusting a graph.",
+   "informs": []
+  },
+  {
+   "id": "test_dry_run",
+   "group": "testing",
+   "title": "Dry runs",
+   "text": "edit --dry-run (cut plan and missing inserts), callback dry_run (plan), batch limits (small first batch), one subject before fan-out.",
+   "informs": []
+  },
+  {
+   "id": "test_untested",
+   "group": "testing",
+   "title": "What is untested",
+   "text": "Say it when it applies: cuts.json is only followed by instruction (edit does not read it in code); visual passes depend on the AI actually looking at the sheets; cloud and generation services are not exercised without credentials; existing workspaces do not gain new template nodes automatically.",
+   "informs": []
+  },
+  {
+   "id": "fail_attach",
+   "group": "failures",
+   "title": "Not attached or wrong node",
+   "text": "Write refused: attach to exactly the node and subject (pipeline_attach), one at a time per agent. Human nodes cannot be attached.",
+   "informs": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "fail_stale",
+   "group": "failures",
+   "title": "Stale or contradictory inputs",
+   "text": "A node whose input is older than its output, two subjects with one title, missing or contradictory knowledge: stale, then callback or decision_ask. Do not paper over it.",
+   "informs": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "fail_loop",
+   "group": "failures",
+   "title": "Loops",
+   "text": "Callback guards stop depth, cycles and repeats; auto_review stops after 3 rounds. A refusal is a signal to ask the human, never to retry.",
+   "informs": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "fail_tool",
+   "group": "failures",
+   "title": "A tool or service is missing or fails",
+   "text": "Say so; check tools_recommended; if installing is the fix, ask. Do not fake output. Failed jobs retry with backoff up to the limit, then stay failed in history.",
+   "informs": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "fail_refused",
+   "group": "failures",
+   "title": "Policy refusal",
+   "text": "Calls needing approval are refused in isolated sessions (cron). Raise decision_ask and stop; leave a handoff note.",
+   "informs": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "fail_cost",
+   "group": "failures",
+   "title": "Cost overruns",
+   "text": "Estimate before, total in the report after. Stop a batch when the spend limit is reached; do not split calls to stay under it.",
+   "informs": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "recovery",
+   "group": "failures",
+   "title": "Recovery",
+   "text": "Set the queue item to failed with the reason (or review if a human must choose); never leave it running. Keep partial files, name them, tell the human where. Reopen only the node that is wrong. Use history to see what ran.",
+   "informs": []
+  },
+  {
+   "id": "policy_consistency",
+   "group": "policies",
+   "title": "Consistency: trusted sources",
+   "text": "Recurring characters, assets and looks are approved once (trusted_source_add with refs, recipe and locked traits). Before writing, generating or rendering a scene, load the approved sources and reuse their refs and recipe verbatim. Propose a new source with decision_ask; do not render the element until approved. After a scene, trusted_source_used. A new source must not contradict an approved one; a change to an approved one is a decision.",
+   "informs": []
+  },
+  {
+   "id": "policy_subtitles",
+   "group": "policies",
+   "title": "Subtitles",
+   "text": "A separate pass after the signed edit (ventosa-graph subtitles, then write subtitles-done): frame-exact SRT/VTT/ASS from the final cut, script-corrected spelling, never words that were not said, never retimed by hand; limits per line, reading speed, duration and gaps from the workspace policy.",
+   "informs": []
+  },
+  {
+   "id": "policy_cron",
+   "group": "policies",
+   "title": "Unattended runs",
+   "text": "A schedule runs an isolated agent on one phase: one node's skill for the oldest item, or a graph edit, never both. No human is present: approval-needing calls are refused, so raise decision_ask and stop. Never publish, upload, delete or spend beyond limits. Finish with the output policy. At most every 5 minutes, never twice at once.",
+   "informs": [
+    "policy_output"
+   ]
+  },
+  {
+   "id": "policy_output",
+   "group": "policies",
+   "title": "Output policy",
+   "text": "Finish every run with a handoff note: done, files, what to check, next action and where.",
+   "informs": [
+    "handoffs"
+   ]
+  }
+ ]
+}

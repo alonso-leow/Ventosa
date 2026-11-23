@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Queues &amp; uploads</title>
+<script src="/common/brand.js"></script>
+<style>
+body{margin:0;min-height:100vh;display:flex;flex-direction:column}
+header{display:flex;gap:8px;align-items:center}
+main{padding:12px;display:flex;flex-direction:column;gap:12px}
+</style>
+<link rel="stylesheet" href="/common/ventosa.css"></head><body>
+<header><h1 data-app="Queues &amp; uploads" data-icon="⇪">Queues &amp; uploads</h1></header>
+<main>
+  <section class="panel"><div class="panel-head"><small>where every subject is</small></div><div style="padding:12px"><mvj-queues></mvj-queues></div></section>
+  <section class="panel"><div class="panel-head"><small>approved for upload: copy texts, drag the file, mark uploaded</small></div><div style="padding:12px"><mvj-uploads></mvj-uploads></div></section>
+</main>
+<script type="module">import '/common/mvj-queues.js'; import '/common/mvj-uploads.js';</script>
+</body></html>

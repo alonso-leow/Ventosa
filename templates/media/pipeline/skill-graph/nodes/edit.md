@@ -1,0 +1,6 @@
+# Node skill: edit (assemble the cut) [AI]
+Runs after voiceover, motion_source and audio_fx: use their files.
+1) `ventosa-graph edit <VID> --dry-run` (EDL + missing inserts). 2) Put inserts in hyperframes/renders/<HF-name>.mp4, assets/screen/<R-ref>.mp4, assets/renders/, or assets/inserts/<VID>-<beat>.<mp4|png>; missing ones become act-coloured cards (report them). 3) `ventosa-graph edit <VID>` → assets/edits/<VID>-final.mp4 (1080p30, −14 LUFS, inserts muted), -edl.json, -chapters.txt, reels/. 4) Spot-check frames, then `ventosa-graph write edit-done <VID> assets/edits/<VID>-final.mp4`.
+
+
+**Cut rules.** If `assets/plans/<ID>-cuts.json` exists use its segments as take ranges (padding and merging are done); otherwise cut as before. Re-encode every trim. Keep at least a 2-frame audio crossfade at joins, duck music under speech, fade the ending, keep captions and lower thirds inside the safe margin. Report `removed_seconds` against the plan. Transitions that overlap two scenes shorten the timeline (recompute lengths); overlays on a cut do not. Overlay requests to `motion_source`: lower third, title card, call to action, progress bar, watermark, picture-in-picture, split screen, before/after wipe.

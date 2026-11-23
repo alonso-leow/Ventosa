@@ -1,0 +1,250 @@
+{
+  "name": "podcast-skill-graph",
+  "rule": "Every AI agent must attach to exactly one step node for one subject (VENTOSA_AGENT=<name> ventosa-graph attach <step> <ID>) before doing pipeline work, follow that node's skill, and write only through `ventosa-graph write`. The write gate refuses writes without the agent's matching attachment. Parallel agents each hold their own single attachment.",
+  "elevate": "Decisions to elevate (decision_ask with options, never guess): the subject's angle or thesis when the labels leave it open; anything said about a real person, brand or sponsor; claims without a source in the knowledge; spending money or calling a paid API beyond the batch limits; publishing, uploading or scheduling anything public; deleting or overwriting the human's takes, edits or labels. Edge cases: missing or contradictory knowledge files; a take or edit that is too short, silent or corrupt; two subjects with the same title; a step whose input is older than its output. Dangerous scenarios (stop and elevate): legal, medical or financial advice; copyrighted music or footage; personal data of anyone but the host; credentials or keys appearing in any file.",
+  "steps": [
+    {
+      "id": "options",
+      "owner": "ai",
+      "need": "write ≥2 thesis options (or one more if the human asked)",
+      "skill": "nodes/options.md",
+      "command": "option",
+      "reads": [
+        "K-tone",
+        "K-meta",
+        "K-addenda",
+        "K-refs",
+        "K-structures"
+      ],
+      "writes": [
+        "F-labels"
+      ],
+      "done_when": "labels.json options ≥2 and want_more false"
+    },
+    {
+      "id": "drafts",
+      "owner": "ai",
+      "need": "write one full script version per option (scripts/<ID>/<KEY>-slug.md)",
+      "skill": "nodes/drafts.md",
+      "command": "draft",
+      "reads": [
+        "K-tone",
+        "K-meta",
+        "K-addenda",
+        "K-refs",
+        "K-papers",
+        "F-labels"
+      ],
+      "writes": [
+        "F-versions"
+      ],
+      "done_when": "every option has a version registered with ai_write.py draft (or the label is already approved)"
+    },
+    {
+      "id": "label",
+      "owner": "human",
+      "need": "choose: activate a script version, or approve a paragraph stack",
+      "skill": "nodes/label.md",
+      "app": "APP-label",
+      "writes": [
+        "F-labels"
+      ],
+      "done_when": "label approved (activating a version approves it)"
+    },
+    {
+      "id": "script",
+      "owner": "ai",
+      "need": "write a version from an approved stack and activate it (skipped when the human activated a version)",
+      "skill": "nodes/script.md",
+      "command": "script-done",
+      "reads": [
+        "F-labels",
+        "K-tone",
+        "K-meta",
+        "K-addenda",
+        "K-refs",
+        "K-papers",
+        "F-clips"
+      ],
+      "writes": [
+        "F-versions",
+        "F-scripts",
+        "F-clips"
+      ],
+      "done_when": "episodes/NN-*.md (active copy) status: final and label_rev = label.rev"
+    },
+    {
+      "id": "record",
+      "owner": "human",
+      "need": "shoot on the external camera, paste files in the inbox, import + keep/discard in Record app",
+      "skill": "nodes/record.md",
+      "app": "APP-record",
+      "writes": [
+        "F-clips",
+        "F-camera",
+        "F-inbox"
+      ],
+      "done_when": "every clip line recorded or parked"
+    },
+    {
+      "id": "link_media",
+      "owner": "ai",
+      "need": "link the teleprompter takes to the media files by time (media_list, teleprompter_log) and flag files with no match",
+      "skill": "nodes/link_media.md",
+      "command": "step-done",
+      "reads": [
+        "F-clips",
+        "F-camera",
+        "F-inbox"
+      ],
+      "writes": [],
+      "done_when": "a step.done event for link_media"
+    },
+    {
+      "id": "edit",
+      "owner": "ai",
+      "need": "ventosa-graph edit <ID> then sign off with edit-done",
+      "skill": "nodes/edit.md",
+      "command": "edit-done",
+      "reads": [
+        "F-clips",
+        "F-camera",
+        "F-scripts",
+        "K-tone"
+      ],
+      "writes": [
+        "F-edits"
+      ],
+      "done_when": "assets/edits/<ID>-final.mp4 signed off with ai_write.py edit-done, newer than the newest kept take"
+    },
+    {
+      "id": "publish_meta",
+      "owner": "ai",
+      "need": "write ≥3 title and ≥2 description candidates",
+      "skill": "nodes/publish_meta.md",
+      "command": "publish",
+      "reads": [
+        "F-labels",
+        "F-scripts",
+        "F-edits",
+        "K-tone",
+        "K-papers"
+      ],
+      "writes": [
+        "F-labels"
+      ],
+      "done_when": "publish.titles ≥3 and publish.descriptions ≥2"
+    },
+    {
+      "id": "publish",
+      "owner": "human",
+      "need": "pick + approve title/description in Label app",
+      "skill": "nodes/publish.md",
+      "app": "APP-label",
+      "writes": [
+        "F-labels"
+      ],
+      "done_when": "publish.approved"
+    },
+    {
+      "id": "upload",
+      "owner": "human",
+      "need": "upload to the platform's upload page, mark uploaded",
+      "skill": "nodes/upload.md",
+      "app": "APP-label",
+      "writes": [
+        "F-labels"
+      ],
+      "done_when": "publish.uploaded"
+    },
+    {
+      "id": "done",
+      "owner": "-",
+      "need": "",
+      "skill": "",
+      "done_when": ""
+    }
+  ],
+  "knowledge": [
+    {
+      "id": "K-tone",
+      "path": "tone.md",
+      "what": "writing policy, sponsor structure, three acts, voice, don'ts"
+    },
+    {
+      "id": "K-meta",
+      "path": "meta/meta-script.md",
+      "what": "true source script"
+    },
+    {
+      "id": "K-addenda",
+      "path": "meta/addenda.md",
+      "what": "A1–A10 legacy honored answers"
+    },
+    {
+      "id": "K-refs",
+      "path": "research/codebase-refs.md",
+      "what": "R-* code facts to quote"
+    },
+    {
+      "id": "K-papers",
+      "path": "research/papers.md",
+      "what": "verified papers only"
+    },
+    {
+      "id": "K-structures",
+      "path": "meta/structures.md",
+      "what": "example thesis options"
+    }
+  ],
+  "files": [
+    {
+      "id": "F-labels",
+      "path": "labelling/labels.json"
+    },
+    {
+      "id": "F-clips",
+      "path": "recording/clips.json"
+    },
+    {
+      "id": "F-scripts",
+      "path": "episodes/"
+    },
+    {
+      "id": "F-camera",
+      "path": "assets/camera/"
+    },
+    {
+      "id": "F-edits",
+      "path": "assets/edits/"
+    },
+    {
+      "id": "F-events",
+      "path": "pipeline/events.jsonl"
+    },
+    {
+      "id": "F-versions",
+      "path": "scripts/<ID>/"
+    },
+    {
+      "id": "F-inbox",
+      "path": "assets/camera/inbox/"
+    }
+  ],
+  "apps": [
+    {
+      "id": "APP-label",
+      "name": "Labelling",
+      "launcher": "ventosa-labelling",
+      "port_key": "labelling",
+      "page": "label.html"
+    },
+    {
+      "id": "APP-record",
+      "name": "Teleprompter",
+      "launcher": "ventosa-teleprompter",
+      "port_key": "teleprompter",
+      "page": "teleprompter.html"
+    }
+  ]
+}

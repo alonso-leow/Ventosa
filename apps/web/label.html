@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Labelling</title>
+<script src="/common/brand.js"></script>
+<style>
+:root{--bg:#07070b;--pan:#12121a;--line:#24232c;--fg:#f2efe9;--dim:#8a8794;--red:#e5243b;--amb:#ffb000;--ok:#3ddc84;--cool:#39c6ff;--ai:#b18cff;--fs:19px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px Inter,system-ui,sans-serif;height:100vh;display:flex;flex-direction:column}
+header{display:flex;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}#vsel{max-width:320px}
+header h1{font-size:15px;margin:0 10px 0 0}
+select,button,input,textarea{background:var(--pan);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font:inherit}
+button{cursor:pointer}button:hover{border-color:var(--dim)}button.p{background:var(--red);border-color:var(--red)}button.g{background:#14301f;border-color:var(--ok)}
+button:disabled{opacity:.4;cursor:default}
+.tab{background:none;border-color:transparent}.tab.on{border-color:var(--amb);color:var(--amb)}
+main{flex:1;display:flex;min-height:0}
+#side{width:270px;border-right:1px solid var(--line);overflow:auto;flex:none}
+.row{padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.row:hover{background:#171722}.row.cur{background:#1d1d2b;border-left:3px solid var(--amb)}
+.row .t{font-size:13px}.row .s{font-size:11px;margin-top:3px}
+.chip{font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid;white-space:nowrap}
+.o-ai{color:var(--ai)}.o-human{color:var(--amb)}.o-done{color:var(--ok)}
+section{flex:1;display:none;min-width:0;min-height:0}section.on{display:flex}
+#opts{flex:1;overflow:auto;padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;align-content:start}
+.opt{border:1px solid var(--line);border-radius:10px;background:var(--pan);padding:12px;display:flex;flex-direction:column}
+.opt h3{margin:0;font-size:16px}.opt .st{color:var(--dim);font-size:12px;margin:2px 0 8px}
+.opt .th{font-size:calc(var(--fs)*1.05);font-style:italic;border-left:3px solid var(--amb);padding:4px 10px;margin-bottom:8px;cursor:pointer}
+.opt .th.sel{background:#2a2410}
+.para{font-size:var(--fs);line-height:1.35;padding:6px 8px;border-radius:6px;cursor:pointer;display:flex;gap:8px}
+.para:hover{background:#1b1b26}.para.in{background:#13261b;color:#cfe}.para .n{color:var(--dim);min-width:1.6em}
+.opt .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:10px}
+.byh{font-size:10px;color:var(--amb)}.bya{font-size:10px;color:var(--ai)}
+#stackp{width:400px;border-left:1px solid var(--line);overflow:auto;padding:12px;flex:none;display:flex;flex-direction:column;gap:8px}
+#stackp textarea{width:100%;resize:vertical}#stackp>*{flex:none}
+.si{border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--pan)}
+.si .h{display:flex;gap:4px;align-items:center;font-size:11px;color:var(--dim)}.si .h span{flex:1}
+.si button{padding:1px 7px;font-size:12px}
+.si textarea{min-height:44px;margin-top:4px;font-size:13px}
+.lab{padding:8px;border-radius:8px;border:1px solid var(--ok);color:var(--ok)}
+.warn{color:var(--amb);font-size:12px}
+#vlist{width:300px;border-right:1px solid var(--line);overflow:auto;padding:10px;flex:none;display:flex;flex-direction:column;gap:8px}
+.ver{border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--pan);cursor:pointer}
+.ver.cur{border-color:var(--amb)}.ver.act{box-shadow:inset 3px 0 var(--ok)}
+.ver .m{font-size:11px;color:var(--dim)}.ver .e{font-size:11px;color:var(--red)}
+#ved{flex:1;min-width:0;display:flex;flex-direction:column}
+#ved .bar{display:flex;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#ved .body{flex:1;overflow:auto;padding:10px;display:flex;gap:10px}
+#ved .body>div{flex:1;min-width:0}
+#ved textarea.raw{width:100%;height:100%;min-height:60vh;font:13px ui-monospace,monospace}
+table.bt{width:100%;border-collapse:collapse;font-size:13px}
+table.bt td,table.bt th{border-bottom:1px solid var(--line);padding:3px;vertical-align:top;text-align:left}
+table.bt th{color:var(--dim);font-weight:500;font-size:11px}
+table.bt td[contenteditable]{outline:none;border-radius:4px}table.bt td[contenteditable]:focus{background:#1b1b26}
+table.bt td.n{font-size:calc(var(--fs)*.85);line-height:1.35;min-width:280px}
+table.bt td.k{width:52px;font-weight:600}table.bt td.s{color:#cfc6ff;max-width:180px}table.bt td.o{color:var(--dim);max-width:180px}
+.errs{color:var(--red);font-size:12px;padding:6px 10px}.oks{color:var(--ok);font-size:12px;padding:6px 10px}
+.cmp{color:var(--dim);font-size:calc(var(--fs)*.8);line-height:1.35}.cmp .r{border-bottom:1px solid var(--line);padding:4px 0}
+#pub{overflow:auto;padding:14px;gap:16px;flex-direction:column}
+.pgrid{display:grid;grid-template-columns:minmax(320px,1fr) minmax(320px,1fr);gap:16px}
+video{width:100%;background:#000;border-radius:8px;max-height:46vh}
+.cand{display:flex;gap:8px;align-items:flex-start;padding:6px;border-radius:6px;cursor:pointer}.cand:hover{background:#171722}
+.cand input{margin-top:3px}
+.cnt{font-size:11px;color:var(--dim);text-align:right}.cnt.bad{color:var(--red)}
+#pipe{overflow:auto;padding:14px;flex-direction:column;gap:18px}
+#read{position:fixed;inset:0;background:#000;z-index:20;display:none;flex-direction:column;padding:5vh 7vw}
+#read .k{color:var(--dim);font-size:16px}#read .c{flex:1;display:flex;align-items:center;font-size:calc(var(--fs)*2.8);font-weight:700;line-height:1.2}
+#read .nx{color:var(--dim);font-size:calc(var(--fs)*1.3)}
+dialog{background:var(--pan);color:var(--fg);border:1px solid var(--dim);border-radius:10px;max-width:640px;width:92vw;padding:18px}
+dialog::backdrop{background:#000b}dialog input,dialog textarea{width:100%;margin:4px 0 10px}
+small,.dim{color:var(--dim)}
+</style>
+<link rel="stylesheet" href="/common/ventosa.css"></head><body>
+<header>
+  <h1 data-app="Labelling" data-icon="🏷">🏷 Labelling</h1>
+  <button class="tab on" data-t="thesis">Thesis</button><button class="tab" data-t="scripts">Scripts</button><button class="tab" data-t="pub">Publish</button><button class="tab" data-t="pipe">Queues &amp; uploads</button>
+  <select id="vsel"></select>
+  <button id="bnew" data-unit-text="+ New {unit} from title">+ New video from title</button>
+  <span style="flex:1"></span>
+  <label>size <input id="fs" type="range" min="14" max="34" value="19"></label>
+  <span id="net" class="dim"></span>
+</header>
+<main>
+  <div id="side"></div>
+  <section id="thesis" class="on">
+    <div id="opts"></div>
+    <div id="stackp"></div>
+  </section>
+  <section id="scripts"><div id="vlist"></div><div id="ved"></div></section>
+  <section id="pub"></section>
+  <section id="pipe"><mvj-queues></mvj-queues><mvj-uploads></mvj-uploads></section>
+</main>
+<div id="read"><div class="k" id="rk"></div><div class="c" id="rc"></div><div class="nx" id="rn"></div>
+  <small>←/→ or space · Esc to close</small></div>
+
+<dialog id="dlgNew"><h3 style="margin-top:0">New video from a title</h3>
+  <small>The AI writes the thesis options next (queue: options). Notes are optional.</small>
+  <label>Title<input id="nTitle" maxlength="100"></label>
+  <label>Notes for the AI (angle, must-say, sources)<textarea id="nNotes" rows="4"></textarea></label>
+  <p><button id="nOk" class="p">Add to the AI queue</button> <button id="nCancel">Cancel</button></p></dialog>
+
+<dialog id="dlgOwn"><h3 style="margin-top:0">Write my own option</h3>
+  <label>Name<input id="oName"></label><label>Thesis<input id="oThesis"></label>
+  <label>Paragraphs (one per line: what each paragraph says)<textarea id="oParas" rows="10"></textarea></label>
+  <p><button id="oOk" class="p">Add option</button> <button id="oCancel">Cancel</button></p></dialog>
+
+<script type="module">
+import '/common/mvj-queues.js';
+import '/common/mvj-uploads.js';
+const $ = s => document.querySelector(s);
+const h = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.flat().forEach(k => k != null && e.append(k)); return e; };
+let S = null, PIPE = null, vid = null, tab = 'thesis', dirty = false, timer = null;
+const V = () => S.videos[vid];
+
+async function load() {
+  try { S = await (await fetch('/labels.json', {cache: 'no-store'})).json(); $('#net').textContent = '● server'; }
+  catch { document.body.textContent = 'No labels.json. Run: python3 labelling/build_options.py && python3 labelling/serve.py'; return; }
+  let saved; try { saved = localStorage.getItem('label.vid'); } catch {}
+  vid = S.videos[saved] ? saved : Object.keys(S.videos)[0];
+  render();
+}
+function touch() { dirty = true; $('#net').textContent = '… saving'; clearTimeout(timer); timer = setTimeout(save, 600); }
+async function save() {
+  clearTimeout(timer);
+  S.updated = new Date().toISOString();
+  try {
+    const r = await fetch('/api/labels', {method: 'POST', body: JSON.stringify(S)});
+    if (!r.ok) throw 0;
+    dirty = false; $('#net').textContent = '● saved'; window.dispatchEvent(new CustomEvent('mvj-refresh'));
+  } catch { $('#net').textContent = '○ NOT saved (server down?)'; }
+}
+window.addEventListener('beforeunload', e => { if (SV.dirty) { e.preventDefault(); e.returnValue = ''; return; } if (dirty) { save(); e.preventDefault(); e.returnValue = ''; } });
+
+// pull AI writes (new options, title candidates) when the human is idle
+window.addEventListener('mvj-pipeline', async e => {
+  PIPE = e.detail; renderSide();
+  const busy = dirty || SV.dirty || document.activeElement?.isContentEditable || ['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement?.tagName);
+  if (busy || !S) return;
+  try {
+    const fresh = await (await fetch('/labels.json', {cache: 'no-store'})).json();
+    if (JSON.stringify(fresh.videos) !== JSON.stringify(S.videos)) { S = fresh; if (!S.videos[vid]) vid = Object.keys(S.videos)[0]; render(); }
+  } catch {}
+});
+
+// live: what the AI finished while this page is open shows up at once (a toast), the options and
+// script versions refresh by themselves, and nothing the human is typing is ever overwritten
+let seenAI = null;
+const aiKey = x => x.at + x.kind + x.vid;
+const AI_WORDS = {'ai.options.done': 'new thesis options', 'ai.draft.done': 'a new script draft', 'ai.pool.done': 'a candidate pool', 'ai.publish.done': 'title and description candidates', 'ai.script.done': 'the final script', 'ai.edit.done': 'the edit', 'step.done': 'a step'};
+function toast(text) {
+  let t = document.getElementById('live-toast');
+  if (!t) { t = h('div', {id: 'live-toast', style: 'position:fixed;right:14px;bottom:14px;z-index:9;max-width:340px;background:var(--pan,#12121a);border:1px solid var(--p-lit,#b38bff);color:var(--fg,#f2efe9);padding:8px 12px;font:12px ui-monospace,monospace;cursor:pointer;display:none'}); t.onclick = () => { t.style.display = 'none'; }; document.body.append(t); }
+  t.textContent = '● ' + text; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => { t.style.display = 'none'; }, 9000);
+}
+window.addEventListener('mvj-pipeline', e => {
+  const evs = (e.detail.recent_events || []).filter(x => x.actor === 'ai');
+  if (seenAI === null) { seenAI = new Set(evs.map(aiKey)); return; }
+  const fresh = evs.filter(x => !seenAI.has(aiKey(x))); fresh.forEach(x => seenAI.add(aiKey(x)));
+  if (!fresh.length) return;
+  const what = [...new Set(fresh.map(x => (AI_WORDS[x.kind] || x.kind.replace(/^ai\./, '')) + ' for ' + x.vid))].slice(0, 3).join(', ');
+  const busy = dirty || SV.dirty;
+  toast('AI added ' + what + (busy ? ' — it will merge when you stop typing' : ''));
+  if (tab === 'scripts' && !SV.dirty && !document.activeElement?.isContentEditable) renderScripts(true);
+});
+window.addEventListener('mvj-pick', e => {
+  vid = e.detail.vid; const st = e.detail.stage;
+  setTab(['publish_meta', 'publish', 'upload', 'done', 'edit'].includes(st) ? 'pub' : ['drafts', 'script', 'record'].includes(st) ? 'scripts' : 'thesis');
+});
+window.addEventListener('mvj-uploaded', e => { const p = S.videos[e.detail.vid]?.publish; if (p) { p.uploaded = e.detail.uploaded; p.url = e.detail.url; } });
+
+function setTab(t) { if (tab === 'scripts' && t !== 'scripts' && !scriptLeaveOk()) return; tab = t; document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.t === t)); render(); }
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => setTab(b.dataset.t));
+$('#fs').oninput = e => document.documentElement.style.setProperty('--fs', e.target.value + 'px');
+$('#vsel').onchange = e => { if (!scriptLeaveOk()) { e.target.value = vid; return; } vid = e.target.value; render(); };
+
+function stageOf(id) { return PIPE?.videos[id] || null; }
+function chip(id) {
+  const p = stageOf(id); if (!p) return h('span', {className: 'chip dim', textContent: '…'});
+  return h('span', {className: 'chip o-' + (p.owner === '-' ? 'done' : p.owner), textContent: p.stage.replace('_', ' ') + (p.owner === 'ai' ? ' · AI' : p.owner === 'human' ? ' · you' : '')});
+}
+function renderSide() {
+  if (!S) return;
+  const ids = Object.keys(S.videos).sort((a, b) => +a.slice(1) - +b.slice(1));
+  const side = $('#side'); side.innerHTML = '';
+  for (const id of ids) {
+    const v = S.videos[id], p = stageOf(id);
+    side.append(h('div', {className: 'row' + (id === vid ? ' cur' : ''), onclick: () => { if (!scriptLeaveOk()) return; vid = id; render(); }},
+      h('div', {className: 't'}, h('b', {textContent: id + ' '}), v.title),
+      h('div', {className: 's'}, chip(id), p?.detail ? h('span', {className: 'dim', textContent: ' ' + p.detail}) : null)));
+  }
+  const sel = $('#vsel'); sel.innerHTML = '';
+  ids.forEach(id => sel.append(h('option', {value: id, textContent: `${id} · ${S.videos[id].title}`, selected: id === vid})));
+}
+function render() {
+  if (!S) return;
+  try { localStorage.setItem('label.vid', vid); } catch {}
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === tab));
+  renderSide();
+  if (tab === 'thesis') { renderOpts(); renderStack(); }
+  if (tab === 'pub') renderPub();
+  if (tab === 'scripts') renderScripts();
+}
+
+// ---------- Thesis: options side by side, click paragraphs to stack ----------
+const locked = () => V().label.status === 'labelled';
+function inStack(key, i) { return V().stack.some(x => x.opt === key && x.i === i); }
+function renderOpts() {
+  const v = V(), box = $('#opts'); box.innerHTML = '';
+  if (v.options.length < 2) box.append(h('div', {className: 'opt'}, h('h3', {textContent: 'Waiting for the AI'}),
+    h('p', {className: 'dim', textContent: `${v.options.length} option(s). The AI queue "options" will write at least two. Copy the AI prompt in Queues & uploads.`}),
+    v.notes ? h('p', {textContent: 'Your notes: ' + v.notes}) : null));
+  for (const o of v.options) {
+    const th = h('div', {className: 'th' + (v.thesis === o.thesis ? ' sel' : ''), textContent: o.thesis, title: 'use this thesis',
+      onclick: () => { if (locked()) return; v.thesis = o.thesis; touch(); render(); }});
+    const paras = o.paras.map((t, i) => h('div', {className: 'para' + (inStack(o.key, i) ? ' in' : ''), title: 'add to / remove from the stack',
+      onclick: () => {
+        if (locked()) return;
+        const j = v.stack.findIndex(x => x.opt === o.key && x.i === i);
+        if (j >= 0) v.stack.splice(j, 1); else v.stack.push({opt: o.key, i, text: t});
+        touch(); render();
+      }}, h('span', {className: 'n', textContent: i + 1}), h('span', {textContent: t})));
+    box.append(h('div', {className: 'opt'},
+      h('h3', {}, `${o.key}: ${o.name} `, h('span', {className: o.by === 'human' ? 'byh' : 'bya', textContent: o.by === 'human' ? 'yours' : 'AI'})),
+      h('div', {className: 'st', textContent: o.style}), th, ...paras,
+      h('div', {className: 'acts'},
+        h('button', {textContent: `Use all of ${o.key}`, disabled: locked(), onclick: () => { v.stack = o.paras.map((text, i) => ({opt: o.key, i, text})); v.thesis = o.thesis; touch(); render(); }}),
+        h('button', {textContent: '▶ read', onclick: () => read(o.paras.map((t, i) => [`${o.key}${i + 1}`, t]), o.thesis)}))));
+  }
+  box.append(h('div', {className: 'opt'}, h('h3', {textContent: 'More paths'}),
+    h('p', {className: 'dim', textContent: 'Stack paragraphs from two or more options. Need another angle?'}),
+    h('div', {className: 'acts'},
+      h('button', {textContent: v.want_more ? '⏳ AI asked for another option' : 'Ask AI for another option', disabled: v.want_more || locked(), onclick: () => { v.want_more = true; touch(); render(); }}),
+      h('button', {textContent: '+ Write my own option', disabled: locked(), onclick: () => $('#dlgOwn').showModal()}))));
+}
+function renderStack() {
+  const v = V(), p = $('#stackp'); p.innerHTML = '';
+  p.append(h('b', {textContent: 'Chosen structure'}));
+  if (locked()) {
+    p.append(h('div', {className: 'lab'}, `✓ Labelled (rev ${v.label.rev}, ${v.label.at.slice(0, 16)}). The AI writes the final script from this.`,
+      h('div', {}, h('button', {textContent: 'Reopen to change', style: 'margin-top:6px', onclick: () => { v.label.status = 'todo'; touch(); render(); }}))));
+  }
+  p.append(h('small', {textContent: 'Thesis'}));
+  const th = h('textarea', {rows: 3, value: v.thesis, disabled: locked(), oninput: e => { v.thesis = e.target.value; touch(); }}); p.append(th);
+  p.append(h('small', {textContent: `Paragraphs (${v.stack.length}) · click paragraphs on the left to add`}));
+  v.stack.forEach((x, k) => {
+    const mv = d => { const j = k + d; if (j < 0 || j >= v.stack.length) return; [v.stack[k], v.stack[j]] = [v.stack[j], v.stack[k]]; touch(); render(); };
+    p.append(h('div', {className: 'si'},
+      h('div', {className: 'h'}, h('span', {textContent: `${k + 1} · from ${x.opt}${x.opt === '+' ? '' : x.i + 1}`}),
+        h('button', {textContent: '↑', disabled: locked(), onclick: () => mv(-1)}), h('button', {textContent: '↓', disabled: locked(), onclick: () => mv(1)}),
+        h('button', {textContent: '✕', disabled: locked(), onclick: () => { v.stack.splice(k, 1); touch(); render(); }})),
+      h('textarea', {value: x.text, disabled: locked(), oninput: e => { x.text = e.target.value; touch(); }})));
+  });
+  p.append(h('button', {textContent: '+ blank paragraph', disabled: locked(), onclick: () => { v.stack.push({opt: '+', i: -1, text: ''}); touch(); render(); }}));
+  p.append(h('small', {textContent: 'Notes for the AI writer'}));
+  p.append(h('textarea', {rows: 3, value: v.notes || '', disabled: locked(), oninput: e => { v.notes = e.target.value; touch(); }}));
+  const ok = v.thesis.trim() && v.stack.filter(x => x.text.trim()).length >= 4;
+  if (!locked()) {
+    if (!ok) p.append(h('div', {className: 'warn', textContent: 'Needs a thesis and at least 4 paragraphs.'}));
+    p.append(h('div', {className: 'acts', style: 'display:flex;gap:6px'},
+      h('button', {className: 'g', textContent: '✓ Approve label', disabled: !ok, onclick: async () => {
+        v.label = {status: 'labelled', rev: (v.label.rev || 0) + 1, at: new Date().toISOString()}; render(); await save(); }}),
+      h('button', {textContent: '▶ read stack', disabled: !v.stack.length, onclick: () => read(v.stack.map((x, k) => [`${k + 1} · ${x.opt}`, x.text]), v.thesis)})));
+  }
+}
+$('#oCancel').onclick = () => $('#dlgOwn').close();
+$('#oOk').onclick = () => {
+  const v = V(), paras = $('#oParas').value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!$('#oThesis').value.trim() || paras.length < 2) return alert('Thesis and at least 2 paragraphs.');
+  const used = new Set(v.options.map(o => o.key)), key = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].find(c => !used.has(c));
+  v.options.push({key, name: $('#oName').value || 'Mine', style: 'human', thesis: $('#oThesis').value.trim(), paras, by: 'human'});
+  ['#oName', '#oThesis', '#oParas'].forEach(s => $(s).value = ''); $('#dlgOwn').close(); touch(); render();
+};
+
+// ---------- Scripts: CRUD over scripts/<VID>/<slug>.md versions ----------
+const SV = {vid: null, versions: [], active: {}, slug: null, text: '', errors: [], dirty: false, mode: 'beats', cmp: ''};
+const api = async (path, body) => {
+  const r = await fetch(path, body ? {method: 'POST', body: JSON.stringify(body)} : {cache: 'no-store'});
+  const j = await r.json(); if (!r.ok || j.error) throw new Error(j.error || r.status); return j;
+};
+function scriptLeaveOk() { return !SV.dirty || confirm(`Unsaved changes in ${SV.slug}. Leave without saving?`) && !(SV.dirty = false); }
+async function renderScripts(keepSlug) {
+  if (SV.vid !== vid) Object.assign(SV, {vid, slug: null, text: '', dirty: false, cmp: ''});
+  try { Object.assign(SV, await api('/api/scripts?vid=' + vid)); } catch (e) { $('#vlist').textContent = e.message; return; }
+  if (!SV.slug || !SV.versions.some(v => v.slug === SV.slug)) SV.slug = (SV.versions.find(v => v.active) || SV.versions[0] || {}).slug || null;
+  if (SV.slug && !keepSlug && !SV.dirty) await loadVersion(SV.slug); else drawScripts();
+}
+async function loadVersion(slug) {
+  const r = await api(`/api/script?vid=${vid}&slug=${encodeURIComponent(slug)}`);
+  Object.assign(SV, {slug, text: r.text, errors: r.errors, dirty: false}); drawScripts();
+}
+function drawScripts() {
+  const L = $('#vlist'); L.innerHTML = '';
+  L.append(h('div', {style: 'display:flex;gap:6px;flex-wrap:wrap'},
+    h('button', {textContent: '+ New blank', onclick: () => newVersion(null)}),
+    h('button', {textContent: '⧉ Duplicate', disabled: !SV.slug, onclick: () => newVersion(SV.slug)})));
+  if (!SV.versions.length) L.append(h('p', {className: 'dim', textContent: 'No versions yet. The AI drafts one per option (queue: drafts), or start a blank one.'}));
+  for (const v of SV.versions) L.append(h('div', {className: 'ver' + (v.slug === SV.slug ? ' cur' : '') + (v.active ? ' act' : ''),
+    onclick: () => { if (v.slug !== SV.slug && scriptLeaveOk()) loadVersion(v.slug); }},
+    h('div', {}, h('b', {textContent: (v.active ? '★ ' : '') + v.slug})),
+    h('div', {className: 'm', textContent: `option ${v.option || '?'} · ${v.beats} beats · ${v.words} words · ~${Math.round(v.words / 150)} min · ${v.status}`}),
+    h('div', {style: 'font-size:12px;margin-top:3px', textContent: v.thesis}),
+    v.errors.length ? h('div', {className: 'e', textContent: `⚠ ${v.errors.length} issue(s)`}) : null));
+  const E = $('#ved'); E.innerHTML = '';
+  if (!SV.slug) return;
+  const cur = SV.versions.find(v => v.slug === SV.slug) || {};
+  const cmpSel = h('select', {onchange: async e => { SV.cmp = e.target.value; SV.cmpText = SV.cmp ? (await api(`/api/script?vid=${vid}&slug=${SV.cmp}`)).text : ''; drawScripts(); }},
+    h('option', {value: '', textContent: 'compare with…'}), ...SV.versions.filter(v => v.slug !== SV.slug).map(v => h('option', {value: v.slug, selected: v.slug === SV.cmp, textContent: v.slug})));
+  E.append(h('div', {className: 'bar'},
+    h('b', {textContent: SV.slug + (SV.dirty ? ' •' : '')}),
+    h('button', {className: SV.mode === 'beats' ? 'tab on' : 'tab', textContent: 'Beats', onclick: () => { SV.mode = 'beats'; drawScripts(); }}),
+    h('button', {className: SV.mode === 'raw' ? 'tab on' : 'tab', textContent: 'Markdown', onclick: () => { SV.mode = 'raw'; drawScripts(); }}),
+    h('button', {className: 'g', textContent: '💾 Save', disabled: !SV.dirty, onclick: saveVersion}),
+    h('button', {textContent: 'Revert', disabled: !SV.dirty, onclick: () => loadVersion(SV.slug)}),
+    h('button', {textContent: '▶ read', onclick: () => read(tableRows(SV.text).rows.filter(r => r[5]).map(r => [r[0] + ' · ' + r[3], r[5]]), cur.thesis || '')}),
+    cmpSel, h('span', {style: 'flex:1'}),
+    h('button', {className: 'p', textContent: cur.active ? '★ Active (re-activate)' : '★ Activate for recording', disabled: SV.dirty || SV.errors.length > 0, title: 'copies this version to videos/ as the final script; approves the label if it isn\'t yet', onclick: activateVersion}),
+    h('button', {textContent: '🗑 Delete', disabled: cur.active, onclick: deleteVersion})));
+  E.append(SV.errors.length ? h('div', {className: 'errs', textContent: '⚠ ' + SV.errors.join(' · ')})
+    : h('div', {className: 'oks', textContent: cur.active ? `✓ valid · active since ${SV.active.at?.slice(0, 16)} (label rev ${SV.active.label_rev})` : '✓ valid · can be activated'}));
+  const body = h('div', {className: 'body'}), main = h('div'); body.append(main); E.append(body);
+  if (SV.mode === 'raw') main.append(h('textarea', {className: 'raw', value: SV.text, oninput: e => { SV.text = e.target.value; markDirty(); }}));
+  else main.append(beatEditor());
+  if (SV.cmp && SV.cmpText) body.append(h('div', {className: 'cmp'}, h('b', {textContent: SV.cmp}),
+    ...tableRows(SV.cmpText).rows.map(r => h('div', {className: 'r'}, h('b', {textContent: r[0] + ' '}), r[5] || `[${r[3]}]`))));
+}
+function markDirty() { if (!SV.dirty) { SV.dirty = true; const b = document.querySelector('#ved .bar b'); if (b) b.textContent = SV.slug + ' •'; document.querySelectorAll('#ved .bar button').forEach(x => { if (/Save|Revert/.test(x.textContent)) x.disabled = false; if (/Activate|Active/.test(x.textContent)) x.disabled = true; }); } }
+function tableRows(text) {
+  const lines = text.split('\n'), hi = lines.findIndex(l => /^\|\s*id\s*\|/.test(l));
+  if (hi < 0) return {lines, hi, end: hi, rows: []};
+  let end = hi + 2; while (end < lines.length && lines[end].startsWith('|')) end++;
+  const rows = lines.slice(hi + 2, end).map(l => l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim()));
+  return {lines, hi, end, rows};
+}
+function writeRows(rows) {
+  const t = tableRows(SV.text); if (t.hi < 0) return;
+  const clean = c => String(c).replace(/\|/g, '/').replace(/\n/g, ' ').trim();
+  t.lines.splice(t.hi + 2, t.end - t.hi - 2, ...rows.map(r => '| ' + r.map(clean).join(' | ') + ' |'));
+  SV.text = t.lines.join('\n'); markDirty();
+}
+function beatEditor() {
+  const t = tableRows(SV.text);
+  if (t.hi < 0) return h('p', {className: 'errs', textContent: 'No beat table found. Use the Markdown view.'});
+  const rows = t.rows, cols = ['id', 't', 'act', 'source', 'on screen', 'narration', 'reel'];
+  const cls = ['k', '', '', 's', 'o', 'n', ''];
+  const tb = h('table', {className: 'bt'}, h('tr', {}, ...cols.map(c => h('th', {textContent: c})), h('th')));
+  rows.forEach((r, i) => {
+    const tr = h('tr');
+    r.forEach((c, j) => tr.append(h('td', {className: cls[j] || '', contentEditable: 'plaintext-only', textContent: c,
+      oninput: e => { rows[i][j] = e.target.textContent; writeRows(rows); }})));
+    const mv = d => { const k = i + d; if (k < 0 || k >= rows.length) return; [rows[i], rows[k]] = [rows[k], rows[i]]; writeRows(rows); drawScripts(); };
+    tr.append(h('td', {style: 'white-space:nowrap'}, h('button', {textContent: '↑', onclick: () => mv(-1)}), h('button', {textContent: '↓', onclick: () => mv(1)}),
+      h('button', {textContent: '+', title: 'insert beat below', onclick: () => { rows.splice(i + 1, 0, ['B' + (rows.length + 1), '', r[2], 'CAM', '', '', '']); writeRows(rows); drawScripts(); }}),
+      h('button', {textContent: '✕', onclick: () => { if (confirm('Delete beat ' + r[0] + '?')) { rows.splice(i, 1); writeRows(rows); drawScripts(); } }})));
+    tb.append(tr);
+  });
+  return tb;
+}
+async function saveVersion() {
+  try { const r = await api('/api/script/save', {vid, slug: SV.slug, text: SV.text}); SV.versions = r.versions; SV.dirty = false;
+    SV.errors = (r.versions.find(v => v.slug === SV.slug) || {}).errors || []; drawScripts(); window.dispatchEvent(new CustomEvent('mvj-refresh')); }
+  catch (e) { alert('Save failed: ' + e.message); }
+}
+async function newVersion(from) {
+  if (!scriptLeaveOk()) return;
+  const base = from ? from.replace(/^([A-Za-z0-9+]+)-.*/, '$1') + '-copy' : 'M-my-version';
+  const slug = prompt('Name for the new version (letters, digits, dashes)', base); if (!slug) return;
+  try { const r = await api('/api/script/create', {vid, slug, from, title: V().title, thesis: V().thesis}); SV.versions = r.versions; await loadVersion(slug); }
+  catch (e) { alert(e.message); }
+}
+async function deleteVersion() {
+  if (!confirm(`Delete version ${SV.slug}? This removes scripts/${vid}/${SV.slug}.md.`)) return;
+  try { const r = await api('/api/script/delete', {vid, slug: SV.slug}); SV.versions = r.versions; SV.slug = null; renderScripts(); }
+  catch (e) { alert(e.message); }
+}
+async function activateVersion() {
+  const lab = V().label.status === 'labelled';
+  if (!confirm(`Activate ${SV.slug}?\n\nIt becomes the final script in videos/ and the Record app line list.` + (lab ? '' : `\nThe label isn't approved yet: activating approves it with this version's thesis.`))) return;
+  try { if (dirty) await save(); const r = await api('/api/script/activate', {vid, slug: SV.slug}); S = r.labels; SV.versions = r.versions; SV.active = r.active; drawScripts(); renderSide(); window.dispatchEvent(new CustomEvent('mvj-refresh')); }
+  catch (e) { alert('Activation failed: ' + e.message); }
+}
+addEventListener('keydown', e => { if (tab === 'scripts' && (e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (SV.dirty) saveVersion(); } });
+
+// ---------- New video from a title ----------
+$('#bnew').onclick = () => $('#dlgNew').showModal();
+$('#nCancel').onclick = () => $('#dlgNew').close();
+$('#nOk').onclick = async () => {
+  const title = $('#nTitle').value.trim(); if (!title) return;
+  const n = Math.max(0, ...Object.keys(S.videos).map(k => +k.slice(1))) + 1, id = 'V' + String(n).padStart(2, '0');
+  S.videos[id] = {title, options: [], stack: [], thesis: '', notes: $('#nNotes').value.trim(), want_more: false,
+    label: {status: 'todo', rev: 0, at: ''}, publish: {titles: [], descriptions: [], tags: '', title: '', description: '', approved: false, uploaded: false, url: ''}};
+  vid = id; $('#nTitle').value = $('#nNotes').value = ''; $('#dlgNew').close(); render(); await save();
+};
+
+// ---------- Publish: watch the edit, pick title + description ----------
+function renderPub() {
+  const v = V(), p = v.publish, st = stageOf(vid), box = $('#pub'); box.innerHTML = '';
+  box.append(h('h2', {style: 'margin:0', textContent: `${vid} · publish`}), h('div', {className: 'dim', textContent: st ? `stage: ${st.stage} — ${st.detail || st.need}` : ''}));
+  const g = h('div', {className: 'pgrid'}); box.append(g);
+  const left = h('div'), right = h('div'); g.append(left, right);
+  if (st?.edit) left.append(h('video', {src: '/media/' + st.edit.replace(/^assets\//, ''), controls: true, preload: 'metadata'}), h('small', {textContent: st.edit}));
+  else left.append(h('p', {className: 'dim', textContent: 'No edited video yet (assets/edits/' + vid + '-final.mp4). The AI edit step makes it after every line is recorded.'}));
+  left.append(h('p', {}, h('b', {textContent: 'Thesis: '}), v.thesis || '—'));
+  const lockedP = p.approved;
+  const pick = (label, list, field, max, rows) => {
+    right.append(h('h3', {textContent: label, style: 'margin:10px 0 4px'}));
+    if (!list.length) right.append(h('div', {className: 'dim', textContent: 'No AI candidates yet (queue: publish meta).'}));
+    list.forEach(t => right.append(h('label', {className: 'cand'},
+      h('input', {type: 'radio', name: field, checked: p[field] === t, disabled: lockedP, onchange: () => { p[field] = t; touch(); render(); }}),
+      h('span', {textContent: t, style: 'white-space:pre-wrap'}))));
+    const ta = h('textarea', {rows, value: p[field] || '', disabled: lockedP, maxLength: max, style: 'width:100%', placeholder: 'final ' + field + ' (edit freely)',
+      oninput: e => { p[field] = e.target.value; c.textContent = `${p[field].length}/${max}`; touch(); }});
+    const c = h('div', {className: 'cnt', textContent: `${(p[field] || '').length}/${max}`});
+    right.append(ta, c);
+  };
+  pick('Title', p.titles || [], 'title', 100, 2);
+  pick('Description', p.descriptions || [], 'description', 5000, 10);
+  right.append(h('h3', {textContent: 'Tags', style: 'margin:10px 0 4px'}),
+    h('input', {value: p.tags || '', disabled: lockedP, style: 'width:100%', placeholder: 'comma, separated', oninput: e => { p.tags = e.target.value; touch(); }}));
+  const ready = (p.title || '').trim() && (p.description || '').trim() && st?.edit;
+  right.append(h('p', {}, lockedP
+    ? h('button', {textContent: 'Unapprove (edit again)', disabled: p.uploaded, onclick: () => { p.approved = false; touch(); render(); }})
+    : h('button', {className: 'g', textContent: '✓ Approve for upload', disabled: !ready, onclick: async () => { p.approved = true; render(); await save(); }}),
+    ready || lockedP ? null : h('span', {className: 'warn', textContent: ' needs the edited video, a title and a description'})));
+  box.append(h('mvj-uploads'));
+}
+
+// ---------- Read mode (teleprompter) ----------
+let RL = [], RI = 0;
+function read(list, thesis) { RL = [['thesis', thesis], ...list]; RI = 0; $('#read').style.display = 'flex'; showRead(); }
+function showRead() { const [k, t] = RL[RI]; $('#rk').textContent = `${k} (${RI + 1}/${RL.length})`; $('#rc').textContent = t; $('#rn').textContent = RL[RI + 1]?.[1] || ''; }
+document.addEventListener('keydown', e => {
+  if ($('#read').style.display !== 'flex') return;
+  if (e.key === 'Escape') $('#read').style.display = 'none';
+  if (e.key === 'ArrowRight' || e.key === ' ') { RI = Math.min(RL.length - 1, RI + 1); showRead(); e.preventDefault(); }
+  if (e.key === 'ArrowLeft') { RI = Math.max(0, RI - 1); showRead(); }
+});
+$('#read').onclick = () => { RI = Math.min(RL.length - 1, RI + 1); showRead(); };
+load();
+</script></body></html>

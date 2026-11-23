@@ -1,0 +1,41 @@
+{
+ "name": "my-channel",
+ "brand": {
+  "name": "My Channel",
+  "tagline": "videos",
+  "accent": "#ff2e2e"
+ },
+ "unit": "video",
+ "id_prefix": "V",
+ "subjects_dir": "videos",
+ "platform": {
+  "name": "YouTube",
+  "title_max": 100,
+  "min_chapters": 3
+ },
+ "sponsor": {
+  "line": "",
+  "lower_third": ""
+ },
+ "media": {
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "audio_only": false,
+  "edit_ext": [
+   ".mp4",
+   ".webm",
+   ".mov"
+  ]
+ },
+ "ports": {
+  "labelling": 8766,
+  "teleprompter": 8765
+ },
+ "rules": {
+  "no_music": false,
+  "max_animations": 7
+ },
+ "agent_command": "ventosa-graph attach {step} {vid}",
+ "agent_env": "VENTOSA_AGENT"
+}

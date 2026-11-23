@@ -1,0 +1,6 @@
+# Node skill: gen_media [AI]
+Generate image, video, audio or mesh assets with an external service where the plan needs something that cannot be filmed or found. Skip with `step-done … "skipped: nothing to generate"`. Knowledge: `K-genmedia` (read first), `K-motion`, `K-tone`.
+
+**Do:** list the plan's generated lines (insert, background, concept still, reference for 3D). For each: list the service's models, choose by need, estimate cost, then `decision_ask` with provider, model, prompt, references and cost, unless inside the batch limits in settings. Generate, wait, save to `assets/generated/<ID>/` with a sidecar JSON (provider, model, prompt, seed, cost, date). Write `assets/generated/<ID>/index.md` mapping beat to file and why.
+**Gates:** paid and third-party calls need the ask above; nothing private in prompts or uploaded references; no real people, brands, copyrighted characters or living artists' styles; credentials never written or printed; record terms and licence; at most one retry on failure, then ask; disclose generated media where required.
+**Done:** `ventosa-graph write step-done <ID> gen_media "n assets, cost X"`. `scene_3d` and `motion_source` use the files; `motion_ok` reviews.

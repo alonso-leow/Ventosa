@@ -1,0 +1,114 @@
+/* Ventosa web kit: MetalVJ's component look (phosphor surfaces, hairline rules,
+   square cells, monospace scale 10/12/13, key|payload rows, glass payload
+   buttons) in Ventosa's colours: deep purple primary, orange secondary.
+   Loaded after each page's own <style>, so these classes and tokens win. */
+:root {
+  --tube: #08080a; --raised: #0d0d10; --pan: #111114; --head: #0a0a0d; --inset: #050506;
+  --line: #1c1c20; --line2: #2c2c33; --stripe: #16161a; --hover: #212128;
+  --fg: #e6e6e8; --dim: #9a9aa2; --faint: #62626b;
+  --p: #8b3dff; --p-lit: #b38bff; --p-dim: #5e24b8; --p-deep: #34126e;
+  --o: #ff8a1f; --o-dim: #b35c10; --o-deep: #4a2406;
+  --ok: #6fbf8f; --warn: #d9a441;
+  --glow: 0 2px 24px rgba(139, 61, 255, .14);
+  --glass: rgba(17, 17, 20, .67);
+  --mono: "Hack", "DejaVu Sans Mono", "JetBrains Mono", ui-monospace, monospace;
+  --fs-h: 13px; --fs-b: 12px; --fs-s: 10px;
+  --cell: 30px; --key-w: 84px; --pad: 12px; --gap: 8px;
+  /* old page tokens, remapped */
+  --bg: var(--tube); --red: var(--p); --amb: var(--o); --cool: var(--p-lit); --ai: var(--p-lit);
+}
+* { border-radius: 0 !important; }
+html, body { background: var(--tube); color: var(--fg); font: var(--fs-b)/1.45 var(--mono); }
+body { letter-spacing: 0; }
+h1, h2, h3, h4 { font-family: var(--mono); font-weight: 700; }
+h3, h4 { font-size: var(--fs-h); color: var(--dim); }
+small, .dim { color: var(--dim); font-size: var(--fs-s); }
+code, pre { font-family: var(--mono); background: var(--inset); }
+
+/* header = MetalVJ header_frame: raised surface, no rule, wordmark in brand colours */
+header { background: var(--raised) !important; border-bottom: 1px solid var(--line) !important; padding: 5px 8px !important; min-height: 40px; }
+header h1 { font-size: calc(var(--fs-h) * 1.5) !important; color: var(--p); letter-spacing: 0; }
+header h1 .w1 { color: var(--o); font-weight: 400; } header h1 .w2 { color: var(--p); }
+header label { color: var(--dim); font-size: var(--fs-s); }
+
+/* controls = payload look: glass fill, black outline, square */
+select, button, input, textarea {
+  background: var(--glass) !important; color: var(--fg); border: 1px solid #000 !important;
+  font: var(--fs-s)/1.3 var(--mono) !important; padding: 6px 10px; min-height: 26px;
+}
+input[type=range] { background: transparent !important; border: 0 !important; accent-color: var(--p); }
+input[type=checkbox] { accent-color: var(--p); min-height: 0; }
+textarea, input[type=text], input:not([type]) { background: var(--inset) !important; }
+button:hover, select:hover { background: var(--p-deep) !important; border-color: var(--line2) !important; }
+button:active { background: var(--p) !important; color: var(--tube) !important; }
+button.p { background: var(--p) !important; color: #fff; border-color: var(--p) !important; }
+button.p:hover { background: var(--p-lit) !important; }
+button.g { background: rgba(111, 191, 143, .12) !important; color: var(--ok); border-color: var(--ok) !important; }
+button.o, .todo button { color: var(--o); }
+button.tab { background: transparent !important; border: 0 !important; color: var(--dim); font-size: var(--fs-b) !important; }
+button.tab.on { color: var(--p) !important; box-shadow: inset 0 -2px 0 var(--p); }
+button:disabled { opacity: .4; }
+
+/* panels, cards, dialogs */
+.panel, dialog { background: var(--pan) !important; border: 1px solid var(--line) !important; color: var(--fg); }
+dialog { box-shadow: var(--glow); }
+dialog::backdrop { background: rgba(0, 0, 0, .72); }
+.panel-head { background: var(--head); box-shadow: var(--glow); padding: var(--pad); min-height: 26px; display: flex; align-items: center; gap: var(--gap); }
+.card { border: 1px solid var(--line) !important; background: transparent; padding: 8px !important; margin: 0 0 8px !important; }
+.card h4, .card .title { margin: 0 0 6px; font-size: var(--fs-s); color: var(--dim); font-weight: 700; }
+
+/* key | payload grid rows (MetalVJ label_row) */
+.kv { display: grid; grid-template-columns: var(--key-w) 1fr; min-height: var(--cell); }
+.kv > .key { background: var(--head); box-shadow: 2px 2px 0 rgba(139, 61, 255, .55); outline: 1px solid #000; outline-offset: -1px;
+  color: var(--dim); font-size: var(--fs-s); font-weight: 700; padding: 0 8px; display: flex; align-items: center; overflow: hidden; white-space: nowrap; }
+.kv > .pay { background: var(--glass); outline: 1px solid #000; outline-offset: -1px; display: flex; align-items: center; gap: 6px; padding: 0 8px; min-width: 0; }
+.kv.todo > .key { box-shadow: 2px 2px 0 rgba(255, 138, 31, .55); }
+
+/* list rows and chips */
+.row { border-bottom: 1px solid var(--line) !important; }
+.row:hover { background: var(--hover) !important; }
+.row.cur { background: var(--stripe) !important; border-left: 3px solid var(--o) !important; }
+.chip { border-radius: 0 !important; font-size: var(--fs-s) !important; }
+.pending { color: var(--dim); } .recorded { color: var(--ok); } .discarded { color: var(--p-lit); }
+.reshoot { color: var(--o); } .parked { color: var(--p-lit); }
+.rec .dot { background: var(--p) !important; }
+
+/* recorder */
+#srcbox { display: flex; gap: 6px; align-items: center; }
+#meter { width: 120px; height: 8px; background: var(--inset); outline: 1px solid #000; position: relative; }
+#meter > i { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, var(--p), var(--o)); }
+#saved a { color: var(--o); cursor: pointer; }
+.audio-mode #cam { display: none; }
+#audioCard { position: absolute; right: 16px; bottom: 84px; width: 220px; padding: 10px; background: var(--pan); border: 1px solid var(--line); display: none; }
+.audio-mode #audioCard { display: block; }
+
+/* ---- simpler: controls appear only when they apply ---- */
+body:not(.ext-mode) #bimp { display: none; }
+.audio-mode #brough, .audio-mode #mir, .audio-mode label:has(#mir) { display: none; }
+
+/* ---- mobile first: one column, touch targets, header as a scroll strip ---- */
+@media (max-width: 899px) {
+  :root { --cell: 40px; }
+  html, body { font-size: 13px; }
+  body { height: auto !important; min-height: 100vh; }
+  header { flex-wrap: nowrap !important; overflow-x: auto; gap: 6px !important; position: sticky; top: 0; z-index: 10; scrollbar-width: none; }
+  header > * { flex: none; }
+  header h1 small, #net, header label:has(#fs), header label:has(#mir), #count { display: none !important; }
+  select, button, input, textarea { min-height: 40px; font-size: 12px !important; }
+  main { flex-direction: column !important; min-height: 0; }
+  section.on { flex-direction: column !important; }
+  #side, #vlist { width: auto !important; max-height: 28vh; border-right: 0 !important; border-bottom: 1px solid var(--line); }
+  #stackp { width: auto !important; border-left: 0 !important; border-top: 1px solid var(--line); }
+  #opts { grid-template-columns: 1fr !important; padding: 8px !important; }
+  .pgrid { grid-template-columns: 1fr !important; }
+  #ved .body { flex-direction: column; }
+  table.bt td.n { min-width: 0 !important; }
+  #prompt { padding: 3vh 5vw !important; }
+  #prompt .cur { font-size: min(var(--fs, 56px), 9vw) !important; }
+  #bar { position: sticky; bottom: 0; background: var(--raised); gap: 6px !important; }
+  #bar small { display: none; }
+  #rec { flex: 1; }
+  #cam, #audioCard { width: 34vw !important; right: 8px !important; bottom: 76px !important; }
+  dialog { width: 100vw !important; max-width: 100vw !important; height: 100dvh; max-height: 100dvh; margin: 0; padding: 12px !important; }
+  .kv { grid-template-columns: 30% 1fr; }
+}

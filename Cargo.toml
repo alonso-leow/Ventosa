@@ -1,0 +1,47 @@
+[package]
+name = "ventosa"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+description = "Minimal to-do app (egui) with an MCP server so other AI agents can manage the same list"
+
+[[bin]]
+name = "ventosa"
+path = "src/bin/ventosa/main.rs"
+
+[[bin]]
+name = "ventosa-mcp"
+path = "src/bin/ventosa-mcp.rs"
+
+[dependencies]
+eframe = { version = "0.36", default-features = false, features = ["glow", "default_fonts", "wayland", "x11"] }
+egui = "0.36"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "6"
+toml = "0.8"
+ureq = { version = "2", features = ["json"] }
+pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
+sha2 = "0.10"
+egui_extras = { version = "0.36", default-features = false, features = ["image", "file"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+
+[[bin]]
+name = "ventosa-import"
+path = "src/bin/ventosa-import.rs"
+
+[[bin]]
+name = "ventosa-daemon"
+path = "src/bin/ventosa-daemon.rs"
+
+[[bin]]
+name = "ventosa-init"
+path = "src/bin/ventosa-init.rs"
+
+[[bin]]
+name = "ventosa-install"
+path = "src/bin/ventosa-install.rs"
+
+[[bin]]
+name = "ventosa-portal"
+path = "src/bin/ventosa-portal.rs"

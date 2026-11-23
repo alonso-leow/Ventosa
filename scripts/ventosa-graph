@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Ventosa skill-graph CLI: runs the engine on a workspace.
+#   ventosa-graph [-w DIR] status [--ai|--changes|--ack]   where every subject is
+#   ventosa-graph [-w DIR] nodes | show | detach
+#   ventosa-graph [-w DIR] attach <step> <ID>               obligatory before any AI write
+#   ventosa-graph [-w DIR] write <command> <ID> …           the only AI write path (ai_write.py)
+#   ventosa-graph [-w DIR] new <ID> "Title" ["notes"]       register a subject from a title
+#   ventosa-graph [-w DIR] edit <ID> [--dry-run|--rough]    cut from kept takes
+#   ventosa-graph [-w DIR] subtitles <ID> [--burn] [--lang L] [--backend B]   after the edit
+#   ventosa-graph [-w DIR] review <ID> [--add J|--decide|--accept K]   AI review of the cut before the human
+#   ventosa-graph [-w DIR] index | options                  rebuild clip index / import options
+#   ventosa-graph visualizer --audio F --out F [--midi F] [--title T] [--artist A] …   song → video
+# Workspace: -w, else $VENTOSA_WORKSPACE, else the nearest workspace.json up from here.
+# Agent name: $VENTOSA_AGENT (default main).
+set -euo pipefail
+RT="${VENTOSA_RUNTIME:-$HOME/.local/share/ventosa/runtime}"
+E="$RT/engine"
+if [ "${1:-}" = "-w" ]; then export VENTOSA_WORKSPACE="$(cd "$2" && pwd)"; shift 2; fi
+cmd="${1:-status}"; [ $# -gt 0 ] && shift
+case "$cmd" in
+  status) exec python3 "$E/status.py" "$@" ;;
+  attach|show|detach|nodes) exec python3 "$E/skill.py" "$cmd" "$@" ;;
+  write) exec python3 "$E/ai_write.py" "$@" ;;
+  new) exec python3 "$E/ai_write.py" new "$@" ;;
+  edit) exec python3 "$E/edit.py" "$@" ;;
+  subtitles) exec python3 "$E/subtitles.py" "$@" ;;
+  review) exec python3 "$E/review.py" "$@" ;;
+  index) exec python3 "$E/build_index.py" "$@" ;;
+  options) exec python3 "$E/build_options.py" "$@" ;;
+  event) exec python3 "$E/status.py" --event "$@" ;;
+  visualizer) exec python3 "$E/visualizer.py" "$@" ;;
+  *) sed -n "2,14p" "$0"; exit 2 ;;
+esac

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Label studio</title>
+<script src="/common/brand.js"></script>
+<style>
+body{margin:0;height:100vh;display:flex;flex-direction:column}
+header{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.wrap{flex:1;min-height:0;display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:8px;padding:8px}
+@media (max-width:760px){.wrap{grid-template-columns:1fr;grid-template-rows:40vh auto}}
+.list{display:flex;flex-direction:column;min-height:0;background:var(--pan);border:1px solid var(--line)}
+.list .tools{display:flex;gap:4px;padding:6px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.list .tools input,.list .tools select{flex:1;min-width:80px}
+.rows{overflow:auto;flex:1}
+.row{display:flex;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line);cursor:pointer;min-height:40px;background:var(--inset)}
+.row:hover{background:var(--hover)} .row.on{background:var(--p-deep);box-shadow:inset 2px 0 0 var(--p)}
+.row .t{flex:1;min-width:0} .row .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400}
+.row .t small{color:var(--dim)}
+.badge{font-size:var(--fs-s);padding:1px 5px;border:1px solid var(--line2);color:var(--dim)}
+.badge.approved{color:var(--p-lit);border-color:var(--p-dim)} .badge.rejected{color:var(--warn);border-color:var(--warn)}
+.badge.cached{color:var(--o)} .badge.rendering,.badge.queued{color:var(--p-lit)} .badge.failed{color:var(--warn)}
+.stage{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:auto}
+video{width:100%;max-height:56vh;background:#000;display:block}
+.novideo{aspect-ratio:16/9;max-height:56vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:var(--inset);border:1px solid var(--line);color:var(--dim)}
+.timeline{position:relative;height:46px;background:var(--inset);border:1px solid var(--line);cursor:pointer}
+.timeline .key{position:absolute;top:4px;width:1px;height:14px;background:var(--faint)}
+.timeline .mark{position:absolute;top:20px;width:9px;height:9px;margin-left:-4px;background:var(--o);transform:rotate(45deg)}
+.timeline .head{position:absolute;top:0;bottom:0;width:2px;background:var(--p-lit)}
+.timeline .lbl{position:absolute;bottom:2px;font-size:9px;color:var(--faint)}
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tags button.on{color:var(--o);border-color:var(--o) !important}
+.marks div{display:flex;gap:6px;align-items:center;padding:3px 0;border-bottom:1px solid var(--line)}
+.marks input{flex:1}
+.meta{color:var(--dim);font-size:var(--fs-s)}
+.err{color:var(--warn);white-space:pre-wrap;font-size:var(--fs-s)}
+.verdict button[aria-pressed=true]{color:var(--p-lit);border-color:var(--p) !important}
+textarea{width:100%;min-height:54px;box-sizing:border-box}
+kbd{border:1px solid var(--line2);padding:0 4px;font-size:9px;color:var(--dim)}
+</style>
+<link rel="stylesheet" href="/common/ventosa.css"></head><body>
+<header><h1 data-app="Label studio" data-icon="◧">Label studio</h1>
+  <span class="meta" id="queue"></span>
+  <span style="margin-left:auto" class="meta"><kbd>space</kbd> play · <kbd>m</kbd> mark · <kbd>a</kbd> approve · <kbd>r</kbd> reject · <kbd>j</kbd>/<kbd>k</kbd> next/prev</span>
+</header>
+<div class="wrap">
+  <section class="list">
+    <div class="tools">
+      <input id="q" placeholder="search id, model, song…">
+      <select id="f"><option value="">all</option><option value="pending">to label</option><option value="approved">approved</option><option value="rejected">rejected</option><option value="norender">not rendered</option><option value="failed">render failed</option></select>
+      <button id="bulk" title="render every listed example that has no cached video">render listed</button>
+      <button id="cancel" title="drop queued renders">cancel queue</button>
+    </div>
+    <div class="rows" id="rows"></div>
+  </section>
+  <section class="stage" id="stage"><div class="novideo">pick an example on the left</div></section>
+</div>
+<script>
+let all = [], cfg = {}, cur = null, ex = null, marks = [], verdict = "pending", tag = "";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+async function api(path, body) { const r = await fetch(path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {}); return r.json(); }
+function shown() {
+  const q = $("q").value.toLowerCase(), f = $("f").value;
+  return all.filter(e => (!q || (e.id + e.model + e.song + e.title).toLowerCase().includes(q)) &&
+    (!f || (f === "norender" ? !e.cached : f === "failed" ? e.job === "failed" : f === "pending" ? !e.verdict || e.verdict === "pending" : e.verdict === f)));
+}
+function badge(e) {
+  const r = e.job === "rendering" || e.job === "queued" ? `<span class="badge ${e.job}">${e.job}</span>` : e.job === "failed" ? '<span class="badge failed">failed</span>' : e.cached ? '<span class="badge cached">video</span>' : "";
+  const v = e.verdict && e.verdict !== "pending" ? `<span class="badge ${e.verdict}">${e.verdict}</span>` : "";
+  return r + v;
+}
+function list() {
+  $("rows").innerHTML = shown().map(e => `<div class="row ${cur === e.id ? "on" : ""}" data-id="${esc(e.id)}"><div class="t"><b>${esc(e.id)} · ${esc(e.title)}</b><small>${esc(e.model)} · ${esc(e.song).slice(0, 48)} · ${e.keys} keys${e.marks ? ` · ${e.marks} marks` : ""}</small></div>${badge(e)}</div>`).join("") || '<div class="meta" style="padding:10px">nothing matches</div>';
+  document.querySelectorAll(".row").forEach(r => r.onclick = () => open(r.dataset.id));
+}
+async function refresh() {
+  const d = await api("/api/studio"); all = d.examples; cfg = d.config;
+  $("queue").textContent = (d.queued ? `${d.queued} rendering/queued · ` : "") + `${all.filter(e => e.cached).length}/${all.length} rendered` + (cfg.renderer_found ? "" : " · renderer not found (studio.json ▸ render / renderer)");
+  list();
+  if (cur) { const e = all.find(x => x.id === cur); if (e && e.cached && !document.querySelector("video")) open(cur, true); }
+}
+async function open(id, keep) {
+  cur = id; list();
+  ex = await api(`/api/example?id=${encodeURIComponent(id)}`);
+  if (!keep) { marks = (ex.label.marks || []).slice(); verdict = ex.label.verdict || (all.find(e => e.id === id) || {}).verdict || "pending"; }
+  const e = all.find(x => x.id === id) || {};
+  const rate = ex.rate || cfg.rate || 32, span = ex.meta.span || [0, Math.max(...ex.keys.map(k => k.tick || 0), 1)];
+  $("stage").innerHTML = `
+    ${ex.cached ? `<video id="v" src="/video/${encodeURIComponent(id)}.mp4" controls preload="auto"></video>` :
+      `<div class="novideo"><span>${e.job === "rendering" ? "rendering…" : e.job === "queued" ? "queued for render" : "not rendered yet"}</span>${e.job === "failed" ? `<div class="err">${esc(e.log)}</div>` : ""}<button id="one">render this one</button></div>`}
+    <div class="timeline" id="tl" title="click to seek"></div>
+    <div class="bar tags" id="tags">${(cfg.tags || []).map(t => `<button data-t="${esc(t)}">${esc(t)}</button>`).join("")}<button id="mark">+ mark here (m)</button></div>
+    <div class="marks" id="marks"></div>
+    <div class="bar verdict">${["approved", "pending", "rejected"].map(v => `<button data-v="${v}" aria-pressed="${verdict === v}">${v}</button>`).join("")}<button id="save" style="margin-left:auto">save label</button><button id="rerender" title="render again, ignoring the cache">re-render</button></div>
+    <textarea id="notes" placeholder="notes for the author / the next pass">${esc(ex.label.notes || "")}</textarea>
+    <div class="meta"><b>${esc(ex.meta.title)}</b> · ${esc(ex.meta.model)} · ${esc(ex.meta.kind)} · span ${esc(JSON.stringify(ex.meta.span))}<br>${esc(ex.meta.story)}</div>`;
+  const tl = $("tl"), t0 = span[0] / rate, t1 = Math.max(span[1] / rate, t0 + 1), X = t => (100 * (t - t0) / (t1 - t0)).toFixed(3) + "%";
+  for (const k of ex.keys) { if (k.tick == null) continue; const d = document.createElement("div"); d.className = "key"; d.style.left = X(k.tick / rate); d.title = `key @${k.tick} · ${k.n} floats ${k.why || ""}`; tl.appendChild(d); }
+  for (let s = Math.ceil(t0 / 10) * 10; s <= t1; s += 10) { const l = document.createElement("span"); l.className = "lbl"; l.style.left = X(s); l.textContent = s + "s"; tl.appendChild(l); }
+  const head = document.createElement("div"); head.className = "head"; tl.appendChild(head);
+  const v = $("v");
+  // the renderer starts the video at the span's start: video time 0 = song time t0
+  const songT = () => v ? t0 + v.currentTime : t0;
+  if (v) { v.ontimeupdate = () => head.style.left = X(songT()); }
+  tl.onclick = e => { if (!v) return; const r = tl.getBoundingClientRect(); v.currentTime = Math.max(0, (e.clientX - r.left) / r.width * (t1 - t0)); };
+  const paintMarks = () => {
+    tl.querySelectorAll(".mark").forEach(m => m.remove());
+    marks.forEach((m, i) => { const d = document.createElement("div"); d.className = "mark"; d.style.left = X(m.t); d.title = `${m.tag} ${m.note}`; d.onclick = ev => { ev.stopPropagation(); if (v) v.currentTime = m.t - t0; }; tl.appendChild(d); });
+    $("marks").innerHTML = marks.map((m, i) => `<div><span class="badge">${m.t.toFixed(2)}s · t${m.tick}</span><span class="badge">${esc(m.tag || "mark")}</span><input data-i="${i}" value="${esc(m.note)}" placeholder="what happens here"><button data-del="${i}">×</button></div>`).join("");
+    $("marks").querySelectorAll("input").forEach(inp => inp.oninput = () => marks[+inp.dataset.i].note = inp.value);
+    $("marks").querySelectorAll("[data-del]").forEach(b => b.onclick = () => { marks.splice(+b.dataset.del, 1); paintMarks(); });
+  };
+  paintMarks();
+  window.addMark = () => { const t = songT(); marks.push({ t, tick: Math.round(t * rate), tag, note: "" }); marks.sort((a, b) => a.t - b.t); paintMarks(); };
+  $("mark").onclick = addMark;
+  document.querySelectorAll("#tags [data-t]").forEach(b => b.onclick = () => { tag = tag === b.dataset.t ? "" : b.dataset.t; document.querySelectorAll("#tags [data-t]").forEach(x => x.classList.toggle("on", x.dataset.t === tag)); });
+  document.querySelectorAll(".verdict [data-v]").forEach(b => b.onclick = () => { verdict = b.dataset.v; document.querySelectorAll(".verdict [data-v]").forEach(x => x.setAttribute("aria-pressed", x === b)); });
+  $("save").onclick = save;
+  $("rerender").onclick = async () => { await api("/api/render", { ids: [id], force: true }); refresh(); };
+  if ($("one")) $("one").onclick = async () => { await api("/api/render", { ids: [id] }); refresh(); };
+}
+async function save() {
+  if (!cur) return;
+  await api("/api/label", { id: cur, verdict, notes: $("notes").value, marks });
+  const e = all.find(x => x.id === cur); if (e) { e.verdict = verdict; e.marks = marks.length; }
+  list();
+}
+function step(d) { const s = shown(); const i = s.findIndex(e => e.id === cur); const n = s[Math.min(s.length - 1, Math.max(0, i + d))]; if (n) open(n.id); }
+document.addEventListener("keydown", e => {
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+  const v = $("v");
+  if (e.key === " " && v) { e.preventDefault(); v.paused ? v.play() : v.pause(); }
+  else if (e.key === "m" && window.addMark) addMark();
+  else if (e.key === "a" || e.key === "r") { verdict = e.key === "a" ? "approved" : "rejected"; save().then(() => step(1)); }
+  else if (e.key === "j") step(1); else if (e.key === "k") step(-1);
+});
+$("q").oninput = list; $("f").onchange = list;
+$("bulk").onclick = async () => { const ids = shown().filter(e => !e.cached).map(e => e.id); const r = await api("/api/render", { ids }); $("queue").textContent = `queued ${r.queued}`; refresh(); };
+$("cancel").onclick = async () => { await api("/api/render/cancel", {}); refresh(); };
+refresh(); setInterval(refresh, 4000);
+</script>
+</body></html>

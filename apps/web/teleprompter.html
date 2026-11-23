@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Teleprompter</title>
+<script src="/common/brand.js"></script>
+<style>
+:root{--bg:#07070b;--pan:#12121a;--line:#24232c;--fg:#f2efe9;--dim:#8a8794;--red:#e5243b;--amb:#ffb000;--ok:#3ddc84;--cool:#39c6ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px Inter,system-ui,sans-serif;height:100vh;display:flex;flex-direction:column}
+header{display:flex;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:15px;margin:0 8px 0 0}
+select,button,input,textarea{background:var(--pan);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font:inherit}
+button{cursor:pointer}button:hover{border-color:var(--dim)}button.p{background:var(--red);border-color:var(--red)}button.g{background:#14301f;border-color:var(--ok)}
+main{flex:1;display:flex;min-height:0}
+#side{width:340px;border-right:1px solid var(--line);overflow:auto}
+.row{padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:8px;align-items:flex-start}
+.row:hover{background:#171722}.row.cur{background:#1d1d2b;border-left:3px solid var(--amb)}
+.row .t{flex:1;font-size:13px;color:var(--dim);overflow:hidden;max-height:3.9em}
+.chip{font-size:11px;padding:2px 7px;border-radius:9px;border:1px solid;white-space:nowrap}
+.pending{color:var(--dim)}.recorded{color:var(--ok)}.discarded{color:var(--red)}.reshoot{color:var(--amb)}.parked{color:var(--cool)}
+#stage{flex:1;display:flex;flex-direction:column;min-width:0}
+#prompt{flex:1;overflow:auto;padding:4vh 6vw;display:flex;flex-direction:column;justify-content:center}
+#prompt .cur{font-size:var(--fs,56px);line-height:1.25;font-weight:700}
+#prompt .nx{font-size:calc(var(--fs,56px)*.5);color:var(--dim);margin-top:3vh;line-height:1.3}
+#prompt .meta{color:var(--dim);font-size:13px;margin-bottom:2vh}
+.mirror #prompt .cur,.mirror #prompt .nx{transform:scaleX(-1)}
+#bar{display:flex;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+#cam{position:absolute;right:16px;bottom:84px;width:220px;border:1px solid var(--line);border-radius:8px;background:#000}
+#cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:30vh;background:#000a;z-index:5}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--dim)}.rec .dot{background:var(--red);animation:b 1s infinite}@keyframes b{50%{opacity:.2}}
+dialog{background:var(--pan);color:var(--fg);border:1px solid var(--dim);border-radius:10px;max-width:760px;width:92vw;padding:18px}
+dialog::backdrop{background:#000b}
+.card{border:1px solid var(--line);border-radius:8px;padding:10px;margin:10px 0}
+.card textarea{width:100%;min-height:60px;margin-top:6px}
+label.o{display:block;margin:4px 0;cursor:pointer}
+small{color:var(--dim)}
+</style>
+<link rel="stylesheet" href="/common/ventosa.css"></head><body>
+<header>
+  <h1 data-app="Teleprompter" data-icon="🎬">🎬 Teleprompter</h1>
+  <select id="vsel"></select>
+  <button id="bman">List ▸ manage</button>
+  <button id="bfilter">Filter: all</button>
+  <span id="count" style="color:var(--dim)"></span>
+  <span style="flex:1"></span>
+  <label>size <input id="fs" type="range" min="28" max="110" value="56"></label>
+  <label><input id="mir" type="checkbox"> mirror</label>
+  <span id="net" style="color:var(--dim)"></span>
+  <span id="srcbox" title="Built-in camera + mic, mic only (audio episodes), or an external camera (space marks takes; files imported later)">
+    <select id="src"><option value="video">camera + mic</option><option value="audio">mic only</option><option value="external">external camera</option></select>
+    <select id="camdev" title="camera"></select><select id="micdev" title="microphone"></select>
+    <input id="ext" type="checkbox" hidden>
+  </span>
+  <button id="bimp">📥 Import camera files</button>
+  <button id="brough" title="Cut this video from the kept takes so far (missing takes become text cards)">🎬 Rough cut</button>
+  <button id="bpipe">Queues &amp; uploads</button>
+  <button id="bexit">Leave teleprompter</button>
+</header>
+<main>
+  <div id="side"></div>
+  <div id="stage">
+    <div id="prompt"></div>
+    <video id="cam" muted playsinline></video>
+    <div id="audioCard"><small>🎙 mic</small><div id="meter"><i></i></div><small id="micname"></small></div>
+    <div id="cd"></div>
+    <div id="bar">
+      <button id="prev">← prev</button><button id="next">next →</button>
+      <button id="rec" class="p">● Record (space)</button>
+      <span id="recst" style="display:flex;gap:6px;align-items:center"><span class="dot"></span><span id="rect">idle</span></span>
+      <span id="rv" style="display:none"><button id="keep" class="g">Keep (K)</button> <button id="disc">Discard (D)</button></span>
+      <span id="saved"></span>
+      <span style="flex:1"></span><small>space rec/stop · K keep · D discard · ←/→ lines</small>
+    </div>
+  </div>
+</main>
+
+<dialog id="dlgMan"><h3 style="margin-top:0">Manage list</h3><div id="manBody"></div>
+  <p><button id="manAdd">+ add line</button> <button id="manClose">Done</button></p></dialog>
+
+<dialog id="dlgDisc"><h3 style="margin-top:0">Discarded sentences: decide before leaving</h3>
+  <small>Every discarded line needs a decision. The state is saved when you confirm.</small>
+  <div id="discBody"></div>
+  <p><button id="discOk" class="p">Save decisions &amp; leave</button> <button id="discBack">Stay in teleprompter</button></p></dialog>
+
+<dialog id="dlgImp" style="max-width:1150px"><h3 style="margin-top:0">Import camera files</h3>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><small>Inbox:</small> <code id="impDir"></code>
+    <button id="impDirB">change folder</button><button id="impScan">↻ rescan</button><button id="impAuto">Auto-match</button>
+    <small id="impHint"></small></div>
+  <div id="impBody" style="max-height:62vh;overflow:auto;margin-top:8px"></div>
+  <p><button id="impGo" class="p">Import</button> <button id="impClose">Close</button>
+  <small>Kept → assets/camera/&lt;line&gt;-t&lt;n&gt;.ext, line marked recorded. Discarded → assets/camera/discarded/, retake queued (decide before leaving). Skip leaves the file in the inbox.</small></p></dialog>
+<dialog id="dlgRough" style="max-width:1100px"><h3 style="margin-top:0">Rough cut <span id="rcVid"></span></h3>
+  <div id="rcPlayer"></div><pre id="rcLog" style="max-height:30vh;overflow:auto;font-size:12px;color:var(--dim);white-space:pre-wrap"></pre>
+  <p><button id="rcGo" class="p">Render again</button> <button onclick="this.closest('dialog').close()">Close</button>
+  <small>Preview only: assets/edits/rough/. The final edit is the AI's edit step (pipeline/edit.py), signed off with ai_write edit-done.</small></p></dialog>
+<dialog id="dlgPipe" style="max-width:1100px"><mvj-queues stages="label,script,record,edit"></mvj-queues><mvj-uploads></mvj-uploads>
+  <p><button onclick="this.closest('dialog').close()">Close</button> <small>✎ draft = script not final yet (Label app → AI writes it). Record finals first.</small></p></dialog>
+<script type="module">import '/common/mvj-queues.js'; import '/common/mvj-uploads.js';
+document.getElementById('bpipe').onclick = () => document.getElementById('dlgPipe').showModal();
+window.addEventListener('mvj-pick', e => { const s = document.getElementById('vsel'); if ([...s.options].some(o => o.value === e.detail.vid)) { s.value = e.detail.vid; s.dispatchEvent(new Event('change')); document.getElementById('dlgPipe').close(); } });
+</script>
+<script>
+const $ = s => document.querySelector(s);
+const h = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.flat().forEach(k => e.append(k)); return e; };
+let S = null, vid = null, idx = 0, filter = 'all', stream = null, mr = null, chunks = [], blob = null, online = true, pendingLeave = null;
+const FILTERS = ['all', 'todo', 'reshoot', 'recorded'];
+
+// live: when the AI finishes a script or a step, say so and pick up the new lines — but never
+// while a take is being recorded or kept (that would drop the take in progress)
+let seenAI = null;
+window.addEventListener('mvj-pipeline', async e => {
+  const evs = (e.detail.recent_events || []).filter(x => x.actor === 'ai').map(x => x.at + x.kind + x.vid);
+  if (seenAI === null) { seenAI = new Set(evs); return; }
+  const fresh = evs.filter(k => !seenAI.has(k)); fresh.forEach(k => seenAI.add(k));
+  if (!fresh.length) return;
+  let t = document.getElementById('live-toast');
+  if (!t) { t = h('div', {id: 'live-toast', style: 'position:fixed;right:14px;bottom:14px;z-index:9;max-width:340px;background:#12121a;border:1px solid #b38bff;color:#f2efe9;padding:8px 12px;font:12px ui-monospace,monospace;display:none'}); document.body.append(t); }
+  t.textContent = '● the AI finished something new — lines refreshed'; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => { t.style.display = 'none'; }, 7000);
+  if ((mr && mr.state === 'recording') || blob || pendingLeave) return;
+  try { const fresh = await (await fetch('/clips.json', {cache: 'no-store'})).json(); if (JSON.stringify(fresh.videos) !== JSON.stringify(S.videos)) { S = fresh; if (!S.videos[vid]) vid = Object.keys(S.videos)[0]; fillVideos(); render(); } } catch {}
+});
+
+async function load() {
+  try { S = await (await fetch('/clips.json', {cache: 'no-store'})).json(); }
+  catch { S = JSON.parse(localStorage.getItem('clips') || 'null'); online = false; }
+  if (!S) { document.body.textContent = 'No clips.json. Run: python3 build_index.py && python3 serve.py'; return; }
+  const lsv = localStorage.getItem('vid'); vid = S.videos[lsv] ? lsv : Object.keys(S.videos)[0];
+  $('#net').textContent = online ? '● server' : '○ offline (saving to browser only)';
+  fillVideos(); render();
+}
+async function save() {
+  S.updated = new Date().toISOString(); localStorage.setItem('clips', JSON.stringify(S));
+  try { const r = await fetch('/api/clips', {method: 'POST', body: JSON.stringify(S)}); online = r.ok; } catch { online = false; }
+  $('#net').textContent = online ? '● saved' : '○ not saved to disk';
+}
+const V = () => S.videos[vid], L = () => V().lines;
+const isTodo = l => l.status === 'pending' || l.status === 'reshoot';
+const shown = () => L().filter(l => filter === 'all' || (filter === 'todo' && isTodo(l)) || l.status === filter);
+
+function fillVideos() {
+  const s = $('#vsel'); s.replaceChildren();
+  for (const [id, v] of Object.entries(S.videos)) {
+    const done = v.lines.filter(l => l.status === 'recorded').length;
+    s.append(h('option', {value: id, selected: id === vid, textContent: `${v.script_status === 'final' ? '' : '✎ draft · '}${id} · ${v.title} (${done}/${v.lines.length})`}));
+  }
+}
+function render() {
+  const lines = L(); if (idx >= lines.length) idx = Math.max(0, lines.length - 1);
+  const side = $('#side'); side.replaceChildren();
+  lines.forEach((l, i) => {
+    if (!shown().includes(l)) return;
+    const r = h('div', {className: 'row' + (i === idx ? ' cur' : '')}, h('b', {textContent: l.beat}),
+      h('div', {className: 't', textContent: l.text}), h('span', {className: 'chip ' + l.status, textContent: l.status + (l.take > 1 ? ` t${l.take}` : '')}));
+    r.onclick = () => { idx = i; render(); }; side.append(r);
+  });
+  const c = lines[idx]; const p = $('#prompt'); p.replaceChildren();
+  if (c) {
+    p.append(h('div', {className: 'meta', textContent: `${c.id} · ${c.t} · ${c.source} · take ${c.take} · ${c.status}`}),
+      h('div', {className: 'cur', textContent: c.text}));
+    lines.slice(idx + 1, idx + 3).forEach(n => p.append(h('div', {className: 'nx', textContent: n.text})));
+  }
+  const cnt = {}; lines.forEach(l => cnt[l.status] = (cnt[l.status] || 0) + 1);
+  $('#count').textContent = Object.entries(cnt).map(([k, n]) => `${k} ${n}`).join(' · ');
+  logSeg();
+  document.body.classList.toggle('mirror', $('#mir').checked);
+  $('#prompt').style.setProperty('--fs', $('#fs').value + 'px');
+  $('#bfilter').textContent = 'Filter: ' + filter; fillVideos();
+}
+
+// ---------- automatic session log: what was on screen and when we recorded (-> recording/sessions/) ----------
+const SID = 's' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + Math.random().toString(36).slice(2, 5);
+let logQ = [], curSeg = null;
+function tplog(ev, extra) { logQ.push({t: new Date().toISOString(), ev, ...extra}); if (ev !== 'seg_on' && ev !== 'seg_off') flushLog(); }
+function flushLog(keep) {
+  if (!logQ.length) return; const events = logQ; logQ = [];
+  fetch('/api/tplog', {method: 'POST', keepalive: !!keep, body: JSON.stringify({session: SID, events})}).catch(() => { logQ = events.concat(logQ); });
+}
+function logSeg() {
+  const c = L()[idx]; const key = c ? vid + '/' + c.id : null;
+  if (curSeg === key) return;
+  if (curSeg) tplog('seg_off', {});
+  curSeg = key;
+  if (c) tplog('seg_on', {video: vid, line: c.id, text: c.text, words: [0, c.text.split(/\s+/).filter(Boolean).length], take: c.take});
+}
+setInterval(() => flushLog(), 3000);
+addEventListener('pagehide', () => { if (curSeg) tplog('seg_off', {}); tplog('session_end', {}); flushLog(true); });
+tplog('session_start', {});
+
+// ---------- recording ----------
+// ---------- built-in capture: camera + mic, or mic only ----------
+const mode = () => $('#src').value;                 // video | audio | external
+let meterRaf = 0;
+function dropStream() { if (stream) stream.getTracks().forEach(t => t.stop()); stream = null; cancelAnimationFrame(meterRaf); }
+async function listDevices() {
+  const devs = await navigator.mediaDevices.enumerateDevices();
+  for (const [sel, kind] of [['#camdev', 'videoinput'], ['#micdev', 'audioinput']]) {
+    const keep = $(sel).value; $(sel).innerHTML = '';
+    devs.filter(d => d.kind === kind).forEach((d, i) => $(sel).append(h('option', {value: d.deviceId, textContent: d.label || `${kind === 'videoinput' ? 'camera' : 'mic'} ${i + 1}`})));
+    if ([...$(sel).options].some(o => o.value === keep)) $(sel).value = keep;
+  }
+}
+function meter() {
+  const ctx = new AudioContext(), an = ctx.createAnalyser(); an.fftSize = 512;
+  ctx.createMediaStreamSource(stream).connect(an); const buf = new Uint8Array(an.fftSize);
+  const tick = () => { an.getByteTimeDomainData(buf); let pk = 0; for (const v of buf) pk = Math.max(pk, Math.abs(v - 128));
+    $('#meter > i').style.width = Math.min(100, pk / 1.28) + '%'; meterRaf = requestAnimationFrame(tick); };
+  tick();
+}
+async function ensureCam() {
+  if (stream) return;
+  const audio = $('#micdev').value ? {deviceId: {exact: $('#micdev').value}} : true;
+  const video = mode() === 'audio' ? false : ($('#camdev').value ? {deviceId: {exact: $('#camdev').value}, width: 1920, height: 1080} : {width: 1920, height: 1080});
+  stream = await navigator.mediaDevices.getUserMedia({video, audio});
+  if (video) { $('#cam').srcObject = stream; $('#cam').play(); }
+  $('#micname').textContent = stream.getAudioTracks()[0]?.label || '';
+  meter(); listDevices();
+}
+function applySource() {
+  $('#ext').checked = mode() === 'external';
+  document.body.classList.toggle('audio-mode', mode() === 'audio');
+  document.body.classList.toggle('ext-mode', mode() === 'external');
+  $('#camdev').style.display = mode() === 'video' ? '' : 'none';
+  $('#micdev').style.display = mode() === 'external' ? 'none' : '';
+  try { localStorage.setItem('ventosa-src', mode()); } catch {}
+  dropStream(); if (mode() !== 'external') ensureCam().catch(() => {});
+}
+$('#src').onchange = applySource; $('#camdev').onchange = applySource; $('#micdev').onchange = applySource;
+window.addEventListener('ventosa-brand', e => {
+  let saved = null; try { saved = localStorage.getItem('ventosa-src'); } catch {}
+  $('#src').value = saved || (e.detail.audio_only ? 'audio' : 'video'); applySource();
+});
+if (window.VENTOSA_BRAND) window.dispatchEvent(new CustomEvent('ventosa-brand', {detail: window.VENTOSA_BRAND}));
+listDevices().catch(() => {});
+// ---------- external camera: marks for auto-matching ----------
+let markOpen = null;
+function markTake() {
+  const l = L()[idx]; l.marks = l.marks || [];
+  if (!markOpen) {
+    markOpen = {start: new Date().toISOString(), take: l.take, verdict: ''}; l.marks.push(markOpen); tplog('rec_start', {video: vid, line: l.id, take: l.take});
+    document.body.classList.add('rec'); $('#rect').textContent = `camera rolling? marked ${l.id} take ${l.take} — space to end`;
+  } else {
+    markOpen.end = new Date().toISOString(); tplog('rec_stop', {video: vid, line: l.id, take: l.take}); document.body.classList.remove('rec');
+    $('#rect').textContent = 'mark ended: good (K) or bad (D)?'; $('#rv').style.display = ''; save();
+  }
+}
+function verdict(v) {
+  if (!markOpen?.end) return false;
+  markOpen.verdict = v; markOpen = null; $('#rv').style.display = 'none'; $('#rect').textContent = 'idle';
+  save(); if (v === 'good') nextTodo(); render(); return true;
+}
+async function toggleRec() {
+  if ($('#ext').checked) return markOpen?.end ? null : markTake();
+  if (mr && mr.state === 'recording') { mr.stop(); return; }
+  if (blob) return;                       // decide on the last take first
+  try { await ensureCam(); } catch (e) { alert('Camera/mic unavailable: ' + e.message); return; }
+  const cd = $('#cd'); cd.style.display = 'flex';
+  for (const n of [3, 2, 1]) { cd.textContent = n; await new Promise(r => setTimeout(r, 800)); }
+  cd.style.display = 'none';
+  const audioOnly = mode() === 'audio';
+  const mime = audioOnly ? 'audio/webm;codecs=opus' : 'video/webm;codecs=vp9,opus';
+  chunks = []; mr = new MediaRecorder(stream, MediaRecorder.isTypeSupported(mime) ? {mimeType: mime} : {});
+  mr.ondataavailable = e => chunks.push(e.data);
+  mr.onstop = () => { tplog('rec_stop', {video: vid, line: L()[idx]?.id, take: L()[idx]?.take}); blob = new Blob(chunks, {type: audioOnly ? 'audio/webm' : 'video/webm'}); document.body.classList.remove('rec');
+    $('#rect').textContent = 'review: keep or discard'; $('#rv').style.display = ''; $('#rec').disabled = true; };
+  mr.start(); tplog('rec_start', {video: vid, line: L()[idx]?.id, take: L()[idx]?.take}); document.body.classList.add('rec'); $('#rect').textContent = 'recording…';
+}
+const now = () => new Date().toISOString();
+function endReview() { blob = null; $('#rv').style.display = 'none'; $('#rec').disabled = false; $('#rect').textContent = 'idle'; }
+async function keep() {
+  if ($('#ext').checked) return verdict('good');
+  if (!blob) return; const l = L()[idx]; const audioOnly = blob.type.startsWith('audio');
+  const name = `${l.id}-t${l.take}${audioOnly ? '.weba' : '.webm'}`; let file = '';
+  const copy = URL.createObjectURL(blob);
+  try { const r = await fetch('/api/upload?name=' + name, {method: 'POST', body: blob}); file = (await r.json()).file; }
+  catch { h('a', {href: copy, download: name}).click(); file = 'assets/camera/' + name + ' (downloaded; move it)'; }
+  $('#saved').innerHTML = '';
+  $('#saved').append(h('small', {textContent: 'saved ' + file + ' · '}),
+    h('a', {textContent: 'show in folder', onclick: () => fetch('/api/reveal?path=' + encodeURIComponent(file), {method: 'POST'})}),
+    h('small', {textContent: ' · '}), h('a', {textContent: 'save a copy…', href: copy, download: name}));
+  tplog('take_saved', {video: vid, line: l.id, take: l.take, file});
+  l.takes.push({n: l.take, file, status: 'kept', at: now(), source: audioOnly ? 'mic' : 'camera'}); l.status = 'recorded'; l.decision = ''; endReview(); await save();
+  nextTodo(); render();
+}
+async function discard() {
+  if ($('#ext').checked) return verdict('bad');
+  if (!blob) return; const l = L()[idx];
+  l.takes.push({n: l.take, file: '', status: 'discarded', at: now()});
+  l.status = 'discarded'; l.decision = ''; l.take++;       // auto-queue the retake; decision settled before leaving
+  endReview(); await save(); render();
+}
+function nextTodo() { const ls = L(); for (let i = idx + 1; i < ls.length; i++) if (isTodo(ls[i])) { idx = i; return; } }
+
+// ---------- discard resolver: runs before leaving the teleprompter ----------
+function unresolved() { return Object.entries(S.videos).flatMap(([id, v]) => v.lines.filter(l => l.status === 'discarded' && !l.decision).map(l => [id, l])); }
+function leaveGuard(action) {
+  if (blob) { if (!confirm('A take is waiting for keep/discard. Discard it?')) return; endReview(); }
+  const u = unresolved(); if (!u.length) { action(); return; }
+  pendingLeave = action; const body = $('#discBody'); body.replaceChildren();
+  u.forEach(([id, l]) => {
+    const g = 'd_' + l.id, ta = h('textarea', {value: l.text, style: 'display:none'});
+    const opt = (v, t, chk) => { const i = h('input', {type: 'radio', name: g, value: v, checked: !!chk}); i.onchange = () => ta.style.display = v === 'rewrite' ? '' : 'none'; return h('label', {className: 'o'}, i, ' ' + t); };
+    body.append(h('div', {className: 'card'}, h('b', {textContent: `${l.id} · take ${l.take - 1} discarded`}), h('div', {textContent: l.text, style: 'color:var(--dim);margin:6px 0'}),
+      opt('reshoot', 'Reshoot as is (queued as take ' + l.take + ')', true), opt('rewrite', 'Rewrite the sentence, then reshoot'), ta,
+      opt('park', 'Park: not part of this shoot (kept in list, skipped)'), opt('drop', 'Drop this line from the script list')));
+    body.lastChild.dataset.id = l.id; body.lastChild.dataset.vid = id; body.lastChild._ta = ta;
+  });
+  $('#dlgDisc').showModal();
+}
+$('#discOk').onclick = async () => {
+  for (const c of $('#discBody').children) {
+    const v = S.videos[c.dataset.vid], l = v.lines.find(x => x.id === c.dataset.id);
+    const ch = c.querySelector('input:checked').value; l.decision = ch;
+    if (ch === 'reshoot') l.status = 'reshoot';
+    if (ch === 'rewrite') { l.text = c._ta.value.trim() || l.text; l.status = 'reshoot'; }
+    if (ch === 'park') l.status = 'parked';
+    if (ch === 'drop') v.lines.splice(v.lines.indexOf(l), 1);
+  }
+  await save(); $('#dlgDisc').close(); render(); const a = pendingLeave; pendingLeave = null; a && a();
+};
+$('#discBack').onclick = () => { pendingLeave = null; $('#dlgDisc').close(); };
+
+// ---------- list management ----------
+function manage() {
+  const b = $('#manBody'); b.replaceChildren();
+  L().forEach((l, i) => {
+    const ta = h('textarea', {value: l.text, style: 'width:100%;min-height:48px'}); ta.onchange = () => { l.text = ta.value; save(); };
+    const st = h('select'); ['pending', 'recorded', 'discarded', 'reshoot', 'parked'].forEach(s => st.append(h('option', {value: s, selected: s === l.status, textContent: s})));
+    st.onchange = () => { l.status = st.value; if (st.value === 'reshoot') { l.take = Math.max(l.take, (l.takes.length || 0) + 1); } l.decision = st.value === 'discarded' ? '' : l.decision; save(); };
+    const mv = d => h('button', {textContent: d < 0 ? '↑' : '↓', onclick: () => { const j = i + d; if (j < 0 || j >= L().length) return; L().splice(j, 0, L().splice(i, 1)[0]); save(); manage(); }});
+    const del = h('button', {textContent: '✕', onclick: () => { if (confirm('Remove ' + l.id + '?')) { L().splice(i, 1); save(); manage(); } }});
+    b.append(h('div', {className: 'card'}, h('div', {style: 'display:flex;gap:8px;align-items:center'}, h('b', {textContent: l.id}), st, mv(-1), mv(1), del), ta));
+  });
+}
+$('#bman').onclick = () => { manage(); $('#dlgMan').showModal(); };
+$('#manClose').onclick = () => { $('#dlgMan').close(); render(); };
+$('#manAdd').onclick = () => { const n = L().length + 1, t = prompt('New line text'); if (!t) return;
+  L().push({id: `${vid}-X${n}`, beat: 'X' + n, t: '', act: '', source: 'CAM', text: t, script_text: '', reel: '', status: 'pending', take: 1, takes: [], decision: '', extra: true}); save(); manage(); };
+
+// ---------- import dialog ----------
+let INB = {files: [], inbox: ''}, IMP = {};   // IMP[name] = {vid, line, decision}
+const fmtT = iso => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(); };
+async function scanInbox() {
+  try { INB = await (await fetch('/api/inbox', {cache: 'no-store'})).json(); } catch { alert('Server offline'); return; }
+  $('#impDir').textContent = INB.inbox;
+  INB.files.forEach(f => IMP[f.name] = IMP[f.name] || {vid, line: '', decision: 'kept'});
+  if (INB.files.some(f => !IMP[f.name].line)) autoMatch(true);
+  drawImport();
+}
+function autoMatch(onlyEmpty) {
+  const files = INB.files.filter(f => !onlyEmpty || !IMP[f.name].line);
+  const marks = L().flatMap(l => (l.marks || []).filter(m => m.end).map(m => ({...m, line: l.id, t: Date.parse(m.start)}))).sort((a, b) => a.t - b.t);
+  const used = new Set(INB.files.filter(f => IMP[f.name].line && !files.includes(f)).map(f => IMP[f.name].line + '#' + IMP[f.name].take));
+  if (marks.length) {
+    const n = Math.min(marks.length, files.length), diffs = [];
+    for (let i = 0; i < n; i++) diffs.push(Date.parse(files[i].created) - marks[i].t);
+    diffs.sort((a, b) => a - b); const off = diffs[Math.floor(diffs.length / 2)] || 0;   // camera clock offset (median)
+    for (const f of files) {
+      const t = Date.parse(f.created) - off;
+      const m = marks.filter(m => !used.has(m.line + '#' + m.take + '#' + m.start)).sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0];
+      if (!m) { IMP[f.name] = {vid, line: '', decision: 'skip'}; continue; }
+      used.add(m.line + '#' + m.take + '#' + m.start);
+      IMP[f.name] = {vid, line: m.line, decision: m.verdict === 'bad' ? 'discarded' : 'kept', why: `mark ${Math.round(Math.abs(m.t - t) / 1000)} s away`};
+    }
+    $('#impHint').textContent = `matched by your marks · camera clock offset ${Math.round(off / 1000)} s`;
+  } else {
+    const todo = L().map((l, i) => [l, i]).filter(([l, i]) => i >= idx && isTodo(l)).map(([l]) => l.id);
+    files.forEach((f, k) => IMP[f.name] = {vid, line: todo[k] || '', decision: todo[k] ? 'kept' : 'skip', why: 'in order from the current line'});
+    $('#impHint').textContent = 'no marks: files assigned in shooting order to the next lines to record';
+  }
+  drawImport();
+}
+function drawImport() {
+  const b = $('#impBody'); b.replaceChildren();
+  if (!INB.files.length) { b.append(h('p', {textContent: 'Inbox is empty. Copy the camera files into the folder above, then rescan.'})); return; }
+  for (const f of INB.files) {
+    const a = IMP[f.name];
+    const vs = h('select', {onchange: e => { a.vid = e.target.value; a.line = ''; drawImport(); }}, ...Object.entries(S.videos).map(([id, v]) => h('option', {value: id, selected: id === a.vid, textContent: id})));
+    const ls = h('select', {onchange: e => { a.line = e.target.value; a.why = 'manual'; }}, h('option', {value: '', textContent: '— line —'}),
+      ...S.videos[a.vid].lines.map(l => h('option', {value: l.id, selected: l.id === a.line, textContent: `${l.beat} [${l.status}] ${l.text.slice(0, 60)}`})));
+    const dec = h('select', {onchange: e => a.decision = e.target.value}, ...[['kept', 'Keep'], ['discarded', 'Discard'], ['skip', 'Skip']].map(([v, t]) => h('option', {value: v, selected: a.decision === v, textContent: t})));
+    const prev = h('div');
+    const pb = h('button', {textContent: '▶', title: f.playable ? 'preview' : 'browser may not play ' + f.vcodec, onclick: () => {
+      if (prev.firstChild) { prev.replaceChildren(); return; }
+      prev.append(h('video', {src: '/inbox/' + encodeURIComponent(f.name), controls: true, autoplay: true, style: 'width:480px;max-width:100%;margin-top:6px'}));
+      if (!f.playable) prev.append(h('div', {textContent: `codec ${f.vcodec}: your browser may not play it; the thumbnail is the reliable preview`, style: 'color:var(--amb);font-size:12px'}));
+    }});
+    b.append(h('div', {className: 'card', style: 'display:flex;gap:10px;align-items:flex-start'},
+      h('img', {src: '/api/thumb?name=' + encodeURIComponent(f.name), style: 'width:160px;border-radius:6px;background:#000', loading: 'lazy'}),
+      h('div', {style: 'flex:1'},
+        h('div', {}, h('b', {textContent: f.name}), h('small', {textContent: ` · ${fmtT(f.created)} (${f.created_from}) · ${(f.duration || 0).toFixed(1)} s · ${f.vcodec || '?'} ${f.width || ''}×${f.height || ''} · ${(f.size / 1e6).toFixed(1)} MB`})),
+        h('div', {style: 'display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center'}, vs, ls, dec, pb, h('small', {textContent: a.why || ''})),
+        prev)));
+  }
+}
+$('#bimp').onclick = () => { $('#dlgImp').showModal(); scanInbox(); };
+$('#impClose').onclick = () => $('#dlgImp').close();
+$('#impScan').onclick = scanInbox;
+$('#impAuto').onclick = () => autoMatch(false);
+$('#impDirB').onclick = async () => {
+  const p = prompt('Inbox folder (absolute path, e.g. the camera card or a folder you paste into)', INB.inbox); if (!p) return;
+  const r = await fetch('/api/inbox/config', {method: 'POST', body: JSON.stringify({inbox: p})}); const j = await r.json();
+  if (j.error) return alert(j.error); INB = j; IMP = {}; scanInbox();
+};
+$('#impGo').onclick = async () => {
+  const assign = INB.files.map(f => ({name: f.name, ...IMP[f.name]})).filter(a => a.decision !== 'skip' && a.line);
+  const missing = INB.files.filter(f => IMP[f.name].decision !== 'skip' && !IMP[f.name].line).length;
+  if (missing && !confirm(`${missing} file(s) have no line and will stay in the inbox. Continue?`)) return;
+  if (!assign.length) return;
+  await save();   // flush marks/edits first: the server merges onto the saved file
+  const r = await (await fetch('/api/import', {method: 'POST', body: JSON.stringify({assign})})).json();
+  S = r.clips; localStorage.setItem('clips', JSON.stringify(S)); IMP = {};
+  $('#impHint').textContent = `imported ${r.imported.length}: ${r.imported.filter(x => x.decision === 'kept').length} kept, ${r.imported.filter(x => x.decision === 'discarded').length} discarded`;
+  render(); scanInbox();
+};
+try { $('#ext').checked = localStorage.getItem('ext') === '1'; } catch {}
+$('#ext').onchange = () => { try { localStorage.setItem('ext', $('#ext').checked ? '1' : '0'); } catch {} $('#rec').textContent = $('#ext').checked ? '● Mark take (space)' : '● Record (space)'; $('#keep').textContent = $('#ext').checked ? 'Good (K)' : 'Keep (K)'; $('#disc').textContent = $('#ext').checked ? 'Bad (D)' : 'Discard (D)'; $('#cam').style.display = $('#ext').checked ? 'none' : ''; };
+
+// ---------- rough cut preview ----------
+let rcTimer = null;
+async function roughPoll(start) {
+  const r = await (await fetch('/api/roughcut?vid=' + vid, start ? {method: 'POST'} : {cache: 'no-store'})).json();
+  $('#rcVid').textContent = vid + (r.running ? ' · rendering…' : r.exit ? ' · failed' : '');
+  $('#rcLog').textContent = r.log || (r.file ? '' : 'No rough cut yet.');
+  $('#rcGo').disabled = r.running;
+  if (!r.running && r.file) {
+    const src = '/media/' + r.file + '?v=' + r.mtime;
+    if (!$('#rcPlayer video') || $('#rcPlayer video').dataset.src !== src) $('#rcPlayer').replaceChildren(Object.assign(h('video', {src, controls: true, style: 'width:100%;max-height:52vh;background:#000'}), {dataset: {src}}));
+  }
+  clearTimeout(rcTimer); if (r.running && $('#dlgRough').open) rcTimer = setTimeout(() => roughPoll(false), 1500);
+}
+$('#brough').onclick = () => { $('#rcPlayer').replaceChildren(); $('#dlgRough').showModal(); roughPoll(false); };
+$('#rcGo').onclick = () => roughPoll(true);
+
+// ---------- wiring ----------
+$('#vsel').onchange = e => leaveGuard(() => { vid = e.target.value; localStorage.setItem('vid', vid); idx = 0; render(); });
+$('#bexit').onclick = () => leaveGuard(async () => { if (stream) stream.getTracks().forEach(t => t.stop()); stream = null; await save(); document.title = 'left · saved'; alert('State saved. You can close this tab.'); });
+$('#bfilter').onclick = () => { filter = FILTERS[(FILTERS.indexOf(filter) + 1) % FILTERS.length]; render(); };
+$('#rec').onclick = toggleRec; $('#keep').onclick = keep; $('#disc').onclick = discard;
+$('#prev').onclick = () => { idx = Math.max(0, idx - 1); render(); }; $('#next').onclick = () => { idx = Math.min(L().length - 1, idx + 1); render(); };
+$('#fs').oninput = render; $('#mir').onchange = render;
+addEventListener('keydown', e => { if (/TEXTAREA|INPUT|SELECT/.test(e.target.tagName) || document.querySelector('dialog[open]')) return;
+  if (e.code === 'Space') { e.preventDefault(); toggleRec(); } else if (e.key === 'k') keep(); else if (e.key === 'd') discard();
+  else if (e.key === 'ArrowRight') $('#next').click(); else if (e.key === 'ArrowLeft') $('#prev').click(); });
+addEventListener('beforeunload', e => { if (S && (unresolved().length || blob || markOpen)) { e.preventDefault(); e.returnValue = ''; } });
+load(); $('#ext').onchange();
+</script></body></html>

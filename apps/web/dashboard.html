@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard</title>
+<script src="/common/brand.js"></script>
+<style>
+body{margin:0;min-height:100vh;display:flex;flex-direction:column}
+header{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+main{padding:12px;display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1100px){main{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}.wide{grid-column:1/-1}}
+.filters{margin-left:auto;display:flex;gap:4px}
+.filters button[aria-pressed=true]{color:var(--p-lit);border-color:var(--p) !important}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.tile{background:var(--pan);border:1px solid var(--line);padding:10px 12px}
+.tile b{display:block;font-size:22px;color:var(--fg);font-weight:700}
+.tile small{color:var(--dim)}
+.chart{position:relative;padding:8px 12px 12px}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:10px;padding:0 12px 8px;color:var(--dim);font-size:var(--fs-s)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:-1px}
+.tip{position:fixed;pointer-events:none;background:var(--raised);border:1px solid var(--line2);padding:6px 8px;font-size:var(--fs-s);color:var(--fg);display:none;z-index:9;max-width:260px}
+.tip b{color:var(--fg)} .tip span{color:var(--dim)}
+table.kpi{width:100%;border-collapse:collapse;font-size:var(--fs-b)}
+table.kpi th,table.kpi td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right}
+table.kpi th:first-child,table.kpi td:first-child{text-align:left}
+table.kpi th{color:var(--dim);font-weight:400;font-size:var(--fs-s)}
+table.kpi td.ai{color:var(--p-lit)} table.kpi td.human{color:var(--o)}
+.empty{color:var(--faint);padding:18px 12px}
+.toggle{margin-left:auto}
+.panel-head{display:flex;align-items:center;gap:8px}
+</style>
+<link rel="stylesheet" href="/common/ventosa.css"></head><body data-palette="#9d6bff,#d8711a,#1a9aa8,#5a8cff,#c25aa0">
+<header><h1 data-app="Dashboard" data-icon="▤">Dashboard</h1>
+  <div class="filters" role="group" aria-label="time range">
+    <button data-days="7">7 d</button><button data-days="30" aria-pressed="true">30 d</button><button data-days="90">90 d</button><button data-days="0">all</button>
+  </div>
+</header>
+<main>
+  <section class="wide tiles" id="tiles"></section>
+  <section class="panel"><div class="panel-head"><small>uploads by platform · and total</small></div><div class="chart" id="uploads"></div></section>
+  <section class="panel"><div class="panel-head"><small>tokens per video · columns by step · line = video total</small><button class="toggle" id="tok-table">table</button></div><div class="legend" id="tok-legend"></div><div class="chart" id="tokens"></div></section>
+  <section class="panel wide"><div class="panel-head"><small>performance per phase · subjects advanced and completed in the window</small></div><div id="phases"></div></section>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+// Categorical order (validated on the dark surface #111114): purple, orange, teal, blue, magenta; more steps fold into "other".
+const CAT = ["#9d6bff", "#d8711a", "#1a9aa8", "#5a8cff", "#c25aa0"], OTHER = "#6b6b74", TOTAL = "#c9c9cf";
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "k" : String(n);
+const tip = document.getElementById("tip");
+function showTip(e, html) { tip.innerHTML = html; tip.style.display = "block"; const x = Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 8); tip.style.left = x + "px"; tip.style.top = (e.clientY + 12) + "px"; }
+function hideTip() { tip.style.display = "none"; }
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent && parent.appendChild(n); return n; }
+function nice(max) { if (max <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(max))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= max) return m * p; return 10 * p; }
+// a bar with a 4px rounded top, square at the baseline
+function bar(svg, x, y, w, h, fill) {
+  const r = Math.min(4, w / 2, h);
+  return el("path", { d: `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`, fill }, svg);
+}
+function axes(svg, W, H, m, top, ticks = 4) {
+  for (let i = 0; i <= ticks; i++) {
+    const v = top * i / ticks, y = m.t + (H - m.t - m.b) * (1 - i / ticks);
+    el("line", { x1: m.l, x2: W - m.r, y1: y, y2: y, stroke: css("--line"), "stroke-width": 1 }, svg);
+    const t = el("text", { x: m.l - 6, y: y + 3, "text-anchor": "end", fill: css("--faint"), "font-size": 10 }, svg); t.textContent = fmt(v);
+  }
+}
+
+function uploads(d) {
+  const box = document.getElementById("uploads"); box.innerHTML = "";
+  const per = Object.entries(d.uploads.per_platform).sort((a, b) => b[1] - a[1]);
+  if (!per.length) { box.innerHTML = '<div class="empty">no uploads in this window — mark uploads in the uploads app</div>'; return; }
+  const cols = [...per.map(([k, v], i) => ({ k, v, c: i < CAT.length ? CAT[i] : OTHER })), { k: "total", v: d.uploads.total, c: TOTAL }];
+  const W = 420, H = 220, m = { l: 34, r: 8, t: 16, b: 28 }, top = nice(Math.max(...cols.map(c => c.v)));
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "uploads per platform" }, box);
+  axes(svg, W, H, m, top);
+  const slot = (W - m.l - m.r) / cols.length, bw = Math.min(46, slot * 0.6);
+  cols.forEach((c, i) => {
+    const h = (H - m.t - m.b) * c.v / top, x = m.l + slot * i + (slot - bw) / 2, y = H - m.b - h;
+    const b = bar(svg, x, y, bw, Math.max(h, 0.5), c.c);
+    const hit = el("rect", { x: m.l + slot * i, y: m.t, width: slot, height: H - m.t - m.b, fill: "transparent" }, svg);
+    const rows = d.uploads.rows.filter(r => c.k === "total" || r.platform === c.k).slice(0, 6).map(r => `${r.vid} ${r.title}`).join("<br>");
+    hit.onmousemove = e => { b.setAttribute("opacity", .85); showTip(e, `<b>${c.k}</b> · ${c.v} upload${c.v === 1 ? "" : "s"}<br><span>${rows}</span>`); };
+    hit.onmouseleave = () => { b.setAttribute("opacity", 1); hideTip(); };
+    const v = el("text", { x: x + bw / 2, y: y - 4, "text-anchor": "middle", fill: css("--fg"), "font-size": 11 }, svg); v.textContent = c.v;
+    const l = el("text", { x: x + bw / 2, y: H - m.b + 14, "text-anchor": "middle", fill: css("--dim"), "font-size": 10 }, svg); l.textContent = c.k;
+  });
+}
+
+let tokTable = false;
+function tokens(d) {
+  const box = document.getElementById("tokens"), leg = document.getElementById("tok-legend"); box.innerHTML = ""; leg.innerHTML = "";
+  const rows = d.tokens;
+  if (!rows.length) { box.innerHTML = '<div class="empty">no reported tokens in this window — runs of the built-in AI, batches and schedules are logged per video</div>'; return; }
+  // steps in pipeline order, the first five get colours, the rest fold into "other"
+  const order = d.phases.map(p => p.id);
+  const seen = [...new Set(rows.flatMap(r => Object.keys(r.steps)))].sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
+  const named = seen.slice(0, CAT.length), colour = s => named.includes(s) ? CAT[named.indexOf(s)] : OTHER;
+  const groups = [...named, ...(seen.length > CAT.length ? ["other"] : [])];
+  const val = (r, g) => g === "other" ? Object.entries(r.steps).filter(([s]) => !named.includes(s)).reduce((a, [, v]) => a + v.input + v.output, 0) : (r.steps[g] ? r.steps[g].input + r.steps[g].output : 0);
+  groups.forEach(g => { leg.insertAdjacentHTML("beforeend", `<span><i style="background:${g === "other" ? OTHER : colour(g)}"></i>${g.replace(/_/g, " ")}</span>`); });
+  leg.insertAdjacentHTML("beforeend", `<span><i style="background:${TOTAL};height:2px;vertical-align:3px"></i>video total</span>`);
+  if (tokTable) {
+    box.innerHTML = `<table class="kpi"><tr><th>video</th>${groups.map(g => `<th>${g}</th>`).join("")}<th>input</th><th>output</th><th>total</th></tr>` +
+      rows.map(r => `<tr><td>${r.vid} ${r.title || ""}</td>${groups.map(g => `<td>${fmt(val(r, g))}</td>`).join("")}<td>${fmt(r.input)}</td><td>${fmt(r.output)}</td><td>${fmt(r.input + r.output)}</td></tr>`).join("") + "</table>";
+    return;
+  }
+  const per = groups.length, colW = Math.max(26, per * 10 + 12);
+  const W = Math.max(520, 46 + rows.length * colW), H = 260, m = { l: 46, r: 10, t: 16, b: 36 };
+  const maxSub = Math.max(...rows.flatMap(r => groups.map(g => val(r, g)))), maxTot = Math.max(...rows.map(r => r.input + r.output));
+  const top = nice(Math.max(maxSub, maxTot));
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "tokens per video by step" }, box);
+  axes(svg, W, H, m, top);
+  const slot = (W - m.l - m.r) / rows.length, inner = slot * 0.78, sw = Math.max(3, (inner - (per - 1) * 2) / per);
+  const ys = v => H - m.b - (H - m.t - m.b) * v / top, pts = [];
+  rows.forEach((r, i) => {
+    const x0 = m.l + slot * i + (slot - (sw * per + 2 * (per - 1))) / 2;
+    groups.forEach((g, k) => { const v = val(r, g); if (v > 0) bar(svg, x0 + k * (sw + 2), ys(v), sw, H - m.b - ys(v), g === "other" ? OTHER : colour(g)); });
+    pts.push([m.l + slot * (i + 0.5), ys(r.input + r.output)]);
+    const l = el("text", { x: m.l + slot * (i + 0.5), y: H - m.b + 14, "text-anchor": "middle", fill: css("--dim"), "font-size": 10 }, svg); l.textContent = r.vid;
+  });
+  // the line between columns: each video's total, joined
+  el("polyline", { points: pts.map(p => p.join(",")).join(" "), fill: "none", stroke: TOTAL, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  const dots = pts.map(([x, y]) => el("circle", { cx: x, cy: y, r: 4, fill: TOTAL, stroke: css("--pan"), "stroke-width": 2 }, svg));
+  const last = pts[pts.length - 1], lt = el("text", { x: last[0] + 6, y: last[1] - 6, fill: css("--dim"), "font-size": 10 }, svg); lt.textContent = fmt(rows[rows.length - 1].input + rows[rows.length - 1].output);
+  rows.forEach((r, i) => {
+    const hit = el("rect", { x: m.l + slot * i, y: m.t, width: slot, height: H - m.t - m.b, fill: "transparent" }, svg);
+    hit.onmousemove = e => { dots[i].setAttribute("r", 6); showTip(e, `<b>${r.vid}</b> ${r.title || ""}<br>` + groups.map(g => `<span>${g}</span> ${fmt(val(r, g))}`).join("<br>") + `<br><b>total ${fmt(r.input + r.output)}</b> <span>(in ${fmt(r.input)} · out ${fmt(r.output)})</span>`); };
+    hit.onmouseleave = () => { dots[i].setAttribute("r", 4); hideTip(); };
+  });
+}
+
+function phases(d) {
+  const box = document.getElementById("phases");
+  const rows = d.phases.filter(p => p.id !== "done");
+  box.innerHTML = `<table class="kpi"><tr><th>phase</th><th>owner</th><th>entered</th><th>advanced</th><th>advance rate</th><th>there now</th><th>events</th></tr>` +
+    rows.map(p => `<tr><td>${p.id.replace(/_/g, " ")}</td><td class="${p.owner}">${p.owner === "ai" ? "AI" : "people"}</td><td>${p.entered}</td><td>${p.advanced}</td><td>${p.entered ? Math.round(100 * Math.min(1, p.advanced / p.entered)) + " %" : "—"}</td><td>${p.now}</td><td>${p.events}</td></tr>`).join("") +
+    `<tr><td><b>completed</b></td><td></td><td></td><td><b>${d.completed.count}</b></td><td></td><td></td><td></td></tr></table>`;
+}
+
+function tiles(d) {
+  const tok = d.tokens.reduce((a, r) => a + r.input + r.output, 0), adv = d.phases.reduce((a, p) => a + p.advanced, 0);
+  const t = [["uploads", d.uploads.total], ["completed", d.completed.count], ["phase advances", adv], ["tokens", fmt(tok)], ["subjects", d.subjects]];
+  document.getElementById("tiles").innerHTML = t.map(([k, v]) => `<div class="tile"><b>${v}</b><small>${k}${d.days ? ` · last ${d.days} d` : ""}</small></div>`).join("");
+}
+
+let days = 30, data = null;
+async function load() {
+  const r = await fetch(`/api/dashboard?days=${days}`); data = await r.json();
+  tiles(data); uploads(data); tokens(data); phases(data);
+}
+document.querySelectorAll(".filters button").forEach(b => b.onclick = () => {
+  days = +b.dataset.days; document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", x === b)); load();
+});
+document.getElementById("tok-table").onclick = e => { tokTable = !tokTable; e.target.textContent = tokTable ? "chart" : "table"; tokens(data); };
+load(); setInterval(load, 30000);
+</script>
+</body></html>
