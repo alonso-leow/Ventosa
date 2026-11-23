@@ -1,0 +1,23 @@
+{
+  "orange": "#ff8a1f",
+  "orange_dim": "#b35c10",
+  "orange_deep": "#4a2406",
+  "purple": "#8b3dff",
+  "purple_lit": "#b38bff",
+  "purple_dim": "#5e24b8",
+  "purple_deep": "#34126e",
+  "tube": "#08080a",
+  "tube_raised": "#0d0d10",
+  "panel": "#111114",
+  "panel_head": "#0a0a0d",
+  "inset": "#050506",
+  "rule": "#1c1c20",
+  "rule_bright": "#2c2c33",
+  "ink": "#e6e6e8",
+  "ink_weak": "#9a9aa2",
+  "ink_faint": "#62626b",
+  "ok": "#6fbf8f",
+  "warn": "#d9a441",
+  "white": "#ffffff",
+  "black": "#0a0a0d"
+}

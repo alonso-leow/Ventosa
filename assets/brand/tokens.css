@@ -1,0 +1,25 @@
+:root {
+  --ventosa-orange: #ff8a1f;
+  --ventosa-orange-dim: #b35c10;
+  --ventosa-orange-deep: #4a2406;
+  --ventosa-purple: #8b3dff;
+  --ventosa-purple-lit: #b38bff;
+  --ventosa-purple-dim: #5e24b8;
+  --ventosa-purple-deep: #34126e;
+  --ventosa-tube: #08080a;
+  --ventosa-tube-raised: #0d0d10;
+  --ventosa-panel: #111114;
+  --ventosa-panel-head: #0a0a0d;
+  --ventosa-inset: #050506;
+  --ventosa-rule: #1c1c20;
+  --ventosa-rule-bright: #2c2c33;
+  --ventosa-ink: #e6e6e8;
+  --ventosa-ink-weak: #9a9aa2;
+  --ventosa-ink-faint: #62626b;
+  --ventosa-ok: #6fbf8f;
+  --ventosa-warn: #d9a441;
+  --ventosa-white: #ffffff;
+  --ventosa-black: #0a0a0d;
+  --ventosa-gradient: linear-gradient(135deg, #ff8a1f, #8b3dff);
+  --ventosa-font: 'JetBrains Mono', ui-monospace, monospace;
+}
